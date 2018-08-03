@@ -353,8 +353,7 @@ public class MassSpringSystem3D : MonoBehaviour
         CreateMaterialFromRenderShader();
         CreateBuffers();// creates all the buffers for positions, velocity, neighbors ,forces  also finds both kernels Poskernel and Velkernel
         MassSpringComputeShader.SetBuffer(VelKernel/*PosKernel*/, SpringComputeShaderProperties.NeighboursBufferName, neighboursBuffer);// set neighbors buffer
-        //Vector3[] positions = new Vector3[VertCount];// VertCount for 3D grid => VertCount = GridResX * GridResY * GridResZ; 
-        Vector3[] positions = new Vector3[vertexCount];
+        Vector3[] positions = new Vector3[VertCount];// VertCount for 3D grid => VertCount = GridResX * GridResY * GridResZ; 
         positionBuffer.GetData(positions);//Read values from positionbuffer into the positions array
         Spawner.SetMassUnitSize(SpringLength);
         //VertSpawner.SetMassUnitSize(SpringLength);
@@ -452,7 +451,7 @@ public class MassSpringSystem3D : MonoBehaviour
      *  Neighbours are listed in 'clockwise' order of direct neighbours followed by clockwise bend neighbour positions:
      *  north, north-east, east, south-east, south, south-west, west, north-west, north-bend, east-bend, south-bend, west-bend. 
      */
-    public Vector3[] GetNeighbourIndexFlagPairs(int index)// the index here is the vertcount 
+    public Vector2[] GetNeighbourIndexFlagPairs(int index)// the index here is the vertcount 
     {
         //TODO: needs to use the same numNeighbours (32) neighbours as the compute shader in the same order! --strank
 
@@ -470,7 +469,7 @@ public class MassSpringSystem3D : MonoBehaviour
 
         /** Depending on the specific neighbour position, we need to check varying bounds conditions.
          */
-        Vector3[] neighbourFlagPairs = new Vector3[numNeighbours];
+        Vector2[] neighbourFlagPairs = new Vector2[numNeighbours];
         /*for (int i = 0; i < 30; ++i)
         {
             int idx = neighbours[i];
@@ -524,7 +523,7 @@ public class MassSpringSystem3D : MonoBehaviour
                 flag = westNeighbourExists1(idy, GridResY) ? 1.0f : 0.0f;
             else if (i == 30)
                 flag = westBendNeighbourExists1(idx, GridResX) ? 1.0f : 0.0f;
-            neighbourFlagPairs[i] = new Vector3(idx, idy, flag);
+            neighbourFlagPairs[i] = new Vector2(idx, flag);
         }
         return neighbourFlagPairs;
     }
@@ -575,11 +574,9 @@ public class MassSpringSystem3D : MonoBehaviour
 
         int index = xPosition + zPosition * GridResX * GridResZ;
         // int index = xPosition + yPosition + zPosition * GridResX * GridResY * GridResZ;
-       // if (index < 0 || index > VertCount)
-            //Debug.Log("Warning: Touch or mouse input generated out of bounds grid index.");
-        if (index < 0 || index > vertexCount)
+        if (index < 0 || index > VertCount)
             Debug.Log("Warning: Touch or mouse input generated out of bounds grid index.");
-
+        
         ApplyPressureToMass(index, pressure, ref extForces);
         ApplyPressureToNeighbours(index, pressure, ref extForces);
     }
@@ -588,13 +585,10 @@ public class MassSpringSystem3D : MonoBehaviour
      */
     private void HandleTouches()
     {
-        //Vector3[] extForces = new Vector3[VertCount];  //Comment out the below to revert back to original mass spring
-        Vector3[] extForces = new Vector3[vertexCount];
-       // for (int i = 0; i < VertCount; i++)
-            //extForces[i] = new Vector3(0.0f, 0.0f, 0.0f);
-        for (int i = 0; i < vertexCount; i++)
+        Vector3[] extForces = new Vector3[VertCount];  //Comment out the below to revert back to original mass spring
+        for (int i = 0; i < VertCount; i++)
             extForces[i] = new Vector3(0.0f, 0.0f, 0.0f);
-
+        
         foreach (Vector3 gridTouch in UITouchHandler.GridTouches)
             UITouchInputUpdated(gridTouch.x, gridTouch.y, gridTouch.z, gridTouch.z + gridTouch.y + gridTouch.x, ref extForces);
 
@@ -633,9 +627,7 @@ public class MassSpringSystem3D : MonoBehaviour
     void UpdatePrimitivePositions()// start here
     {
 
-       // Vector3[] positions = new Vector3[VertCount];
-        //for instantiate vert:
-       Vector3[] positions = new Vector3[vertexCount];
+        Vector3[] positions = new Vector3[VertCount];
         positionBuffer.GetData(positions);// get data from the position buffer and pass it to the positions' array variable
 
         if (Spawner != null)
@@ -686,8 +678,7 @@ public class MassSpringSystem3D : MonoBehaviour
      */
     void AnimateGrid()
     {
-        //Vector3[] velocities = new Vector3[VertCount];
-        Vector3[] velocities = new Vector3[vertexCount];
+        Vector3[] velocities = new Vector3[VertCount];
         velocityBuffer.GetData(velocities);
         float gestureTime = 1.0f;
         float damp = Time.time < gestureTime ? (gestureTime - Time.time) / gestureTime : 0.0f;
