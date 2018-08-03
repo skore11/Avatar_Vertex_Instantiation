@@ -1,6 +1,5 @@
 ﻿#pragma kernel CSMainPos
 #pragma kernel CSMainVel
-#pragma target 4.0
 
 #define thread_group_size_x 4
 #define thread_group_size_y 4
