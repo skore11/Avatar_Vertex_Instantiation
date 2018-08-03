@@ -4,8 +4,8 @@
 
 #define thread_group_size_x 4
 #define thread_group_size_y 4
-//make sure to comment out 3D parameters
-//#define thread_group_size_z 4
+// need the following for 3D, but value above 1 might not be allowed before shader model / target 5.0: --strank
+#define thread_group_size_z 1
 
 //================================================================================================
 // Summary
@@ -44,7 +44,11 @@ struct Force
  */
 struct Neighbours
 {
-    //float3 neighbours[30];
+    //float2 neighbours[32]; // TODO: this would be enough for 3D neighbours and 2 more bend --strank
+    // this means: one up- and one down- variant for each north, north-east, ... neighbour, plus
+    // one up-center and one down-center neighbour right above and below,
+    // and finally the up-bend and down-bend neighbours two above and two below the center.
+    // --strank
 float2 neighbours [12];
 };
 
@@ -90,6 +94,8 @@ RWStructuredBuffer<DeltaTime>  deltaTimeBuffer;
   */
 const float3 getForceForNeighbour (const int idx, const int2 nIdx, const float stiffness, const float springLength, const float dampingFactor)
 {
+    // the nIdx.x is the index of the neighbour in the posBuffer. nIdx.y is simply a flag (1 or 0), see below.
+    // so for non-existant neighbours, the calculation will use index 0, and then throw away the result at the end.
     float3 d      = posBuffer[nIdx.x * nIdx.y].pos - posBuffer[idx].pos;
     float dLength = length(d);
     // avoid division by 0.
@@ -101,11 +107,13 @@ const float3 getForceForNeighbour (const int idx, const int2 nIdx, const float s
 }
 
 [numthreads (thread_group_size_x, thread_group_size_y, 1)]
+// need to switch to this with 3D: --strank
+//[numthreads (thread_group_size_x, thread_group_size_y, thread_group_size_z)]
 
 void CSMainVel (uint3 id : SV_DispatchThreadID)
 {
     /** Our compute shader runs the same kernels in parallel on mutliple blocks of our
-     *  mass spring grid. These blocks are of dimensions gX by gY,
+     *  mass spring grid. These blocks are of dimensions gX by gY (by gZ --strank),
      *  and there are thread_group_size_x blocks along the x dimension of our grid and
      *  thread_group_size_y along the Y dimension.
      *  
@@ -114,13 +122,13 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
      */
 
 	//number of points per side, per thread.
-    const int gX = 15;
+    const int gX = 7;
     const int gY = 7;
-    //const int gZ = 7;
+    const int gZ = 7;
     //grid side resolution
     const int sX = gX * thread_group_size_x;
     const int sY = gY * thread_group_size_y;
-    //const int sZ = gZ * thread_group_size_z;
+    const int sZ = gZ * thread_group_size_z;
 
     const float  mass          = propertiesBuffer[0].mass;
     const float  damping       = propertiesBuffer[0].damping;
@@ -128,13 +136,15 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     const float  springLength  = propertiesBuffer[0].springLength;
 
     //get the index of the vertex in the overall grid.
-    const int idx    = id.x + id.y * thread_group_size_x * gX;
-    const int idy    = id.y + id.y * thread_group_size_y * gY;
-    //const int idz    = id.z + id.z * thread_group_size_z * gZ;
-    //max index is the number of vertices in our grid.
-    //const int maxIdx = sX * sY * sZ;
-    const int maxIdx = sX * sY;
+    const int idx = id.x + id.y * sX ;
+    // for 3D, the index is based on the z position as well: --strank
+    //const int idx = id.x + id.y * sX + id.z * sX * sY;
 
+    //max index is the number of vertices in our grid.
+    const int maxIdx = sX * sY;
+    //const int maxIdx = sX * sY * sZ;
+
+    // TODO: needs to include the additional neighbours, see above at struct Neighbours definition! -- strank
     int2 northNeighbour     = neighboursBuffer[idx].neighbours [0];
     int2 northEastNeighbour = neighboursBuffer[idx].neighbours [1];
     int2 eastNeighbour      = neighboursBuffer[idx].neighbours [2];
@@ -182,13 +192,23 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
 }
 
 [numthreads (thread_group_size_x, thread_group_size_y, 1)]
+// need to switch to this with 3D: --strank
+//[numthreads (thread_group_size_x, thread_group_size_y, thread_group_size_z)]
 void CSMainPos (uint3 id : SV_DispatchThreadID)
 {
 	//number of points per side, per thread.
-    const int gX   = 15;
+    const int gX   = 7;
     const int gY   = 7;
+    const int gZ   = 7;
+    //grid side resolution
+    const int sX = gX * thread_group_size_x;
+    const int sY = gY * thread_group_size_y;
+    //const int sZ = gZ * thread_group_size_z; //not needed here --strank
+
     //index y, x, in order to convert to unity space
-    const int idx = id.x + id.y * thread_group_size_x * gX;
+    const int idx = id.x + id.y * sX ;
+    // for 3D, the index is based on the z position as well: --strank
+    //const int idx = id.x + id.y * sX + id.z * sX * sY;
 
     //calculate new positions given new velocities
     const float delta  = deltaTimeBuffer[0].deltaTime;

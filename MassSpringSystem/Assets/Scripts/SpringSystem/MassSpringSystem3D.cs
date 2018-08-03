@@ -118,6 +118,8 @@ public class MassSpringSystem3D : MonoBehaviour
     private ComputeBuffer velocityBuffer;
     private ComputeBuffer externalForcesBuffer;
 
+    private const int numNeighbours = 32; // 12 for the 2D grid case, see compute shader.
+
     /** Our compute shader runs the same kernels in parallel on mutliple blocks of our
      *  mass spring grid. These blocks are of dimensions gridUnitSideX by gridUnitSideY,
      *  and there are numThreadsPerGroupX blocks along the x dimension of our grid and
@@ -127,7 +129,7 @@ public class MassSpringSystem3D : MonoBehaviour
      *  
      * Note: In addition to the above initialise gridUnitSideZ and numThreadsperGroupZ; both of these vartiables will aid in creating a 3D grid of massspring units
      */
-    private const int gridUnitSideX = 15;
+    private const int gridUnitSideX = 7;
     private const int gridUnitSideY = 7;
     private const int gridUnitSideZ = 7; // leave it at 7 for now
     private const int numThreadsPerGroupX = 4;
@@ -156,11 +158,12 @@ public class MassSpringSystem3D : MonoBehaviour
      */
     private Material RenderMaterial;
     //@HideInInspector
-    Mesh mesh;
+//    Mesh mesh;
     //@HideInInspector
-    SkinnedMeshRenderer skin;
+//    SkinnedMeshRenderer skin;
     //@HideInInspector
-    private int vertexCount = 0;
+// setting this cannot work with a predefined lattice, needs to use the number defined by the lattice size --strank
+//    private int vertexCount = 0;
     // @HideInInspector
     public Vector3[] vertices;
     // @HideInInspector
@@ -170,10 +173,10 @@ public class MassSpringSystem3D : MonoBehaviour
     //===========================================================================================
     private void Start()
     {
-        skin = GetComponent<SkinnedMeshRenderer>();
-
-        mesh = skin.sharedMesh;
-        vertexCount = mesh.vertexCount;
+//        skin = GetComponent<SkinnedMeshRenderer>();
+//        mesh = skin.sharedMesh;
+//        vertexCount = mesh.vertexCount; // see comment above --strank
+        // TODO for later: think again, about how to use the mesh data for initialasing.
         Initialise();
         
     }
@@ -217,8 +220,6 @@ public class MassSpringSystem3D : MonoBehaviour
     public Vector3[] GetPositions()
     {
         Vector3[] positions = new Vector3[VertCount];
-        //for instantiate vert function:
-        //Vector3[] positions = new Vector3[vertexCount];
         positionBuffer.GetData (positions);
         return positions;
         // Debug.Log(positions);
@@ -256,17 +257,11 @@ public class MassSpringSystem3D : MonoBehaviour
      */
     public void CreateBuffers()
     {
-        /*positionBuffer = new ComputeBuffer(VertCount, sizeof(float) * 3);
+        positionBuffer = new ComputeBuffer(VertCount, sizeof(float) * 3);
         velocityBuffer = new ComputeBuffer(VertCount, sizeof(float) * 3);
         externalForcesBuffer = new ComputeBuffer(VertCount, sizeof(float) * 3);
         debugBuffer = new ComputeBuffer(VertCount, sizeof(float) * 3);
-        neighboursBuffer = new ComputeBuffer(VertCount, sizeof(float) * 24); //12 float pairs; check this for 3D
-        //For instantiate vert function, llok at line 220:*/
-        positionBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 3);
-        velocityBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 3);
-        externalForcesBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 3);
-        debugBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 3);
-        neighboursBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 30); //12 float pairs
+        neighboursBuffer = new ComputeBuffer(VertCount, sizeof(float) * numNeighbours * 2); // 2D: 24 = 12 float pairs; 3D: 64 = 32 float pairs
         propertiesBuffer = new ComputeBuffer(SpringComputeShaderProperties3D.NumProperties, sizeof(float));
         deltaTimeBuffer = new ComputeBuffer(1, sizeof(float));
 
@@ -282,49 +277,24 @@ public class MassSpringSystem3D : MonoBehaviour
      */
     public void ResetBuffers()
     {
-        /*Vector3[] positions = new Vector3[VertCount];
+        Vector3[] positions = new Vector3[VertCount];
         Vector3[] velocities = new Vector3[VertCount];
         Vector3[] extForces = new Vector3[VertCount];
-        //Vector2[] neighbours = new Vector2[VertCount * 12];
-        Vector3[] neighbours = new Vector3[VertCount * 12]; //revert back to above when 2D grid is needed
-        //do the same for Instantiate vert:*/
-        Vector3[] positions = new Vector3[vertexCount];
-        Vector3[] velocities = new Vector3[vertexCount];
-        Vector3[] extForces = new Vector3[vertexCount];
-        Vector3[] neighbours = new Vector3[vertexCount * 30];
+        Vector2[] neighbours = new Vector2[VertCount * numNeighbours];
         int neighboursArrayIndex = 0;
-        /*for (int i = 0; i < VertCount; i++)
+        for (int i = 0; i < VertCount; i++)
         {
             float x = ((i % GridResX - GridResX / 2.0f) / GridResX) * GetWorldGridSideLengthX();
             float y = ((i / GridResX - GridResY / 2.0f) / GridResY) * GetWorldGridSideLengthY();
-            float z = ((i / GridResZ - GridResZ / 2.0f / GridResZ)) * GetWorldGridSideLengthZ();// comment out to revert back to 2D grid
-
-            //positions[i] = new Vector3(x, y, 0.0f);
-            positions[i] = new Vector3(x, y, z);
-            velocities[i] = new Vector3(0.0f, 0.0f, 0.0f);
-            extForces[i] = new Vector3(0.0f, 0.0f, 0.0f);
-
-            //Vector2[] neighbourIndexFlagPairs = GetNeighbourIndexFlagPairs(i);
-            Vector3[] neighbourIndexFlagPairs = GetNeighbourIndexFlagPairs(i);// start here to change the neighbor index pairs
-            for (int n = 0; n < 12; ++n)
-            {
-                neighbours[neighboursArrayIndex] = neighbourIndexFlagPairs[n];
-                neighboursArrayIndex++;
-            }
-        }*/
-        //do the same for the vertices of the vertexCount
-        for (int i = 0; i < vertexCount; i++)
-        {
-            float x = ((i % GridResX - GridResX / 2.0f) / GridResX) * GetWorldGridSideLengthX();
-            float y = ((i / GridResX - GridResY / 2.0f) / GridResY) * GetWorldGridSideLengthY();
+            // TODO: make sure this actually calculates the correct z coordinate! with debug.log for example --strank
             float z = ((i / GridResZ - GridResZ / 2.0f / GridResZ)) * GetWorldGridSideLengthZ();
 
             positions[i] = new Vector3(x, y, z);
             velocities[i] = new Vector3(0.0f, 0.0f, 0.0f);
             extForces[i] = new Vector3(0.0f, 0.0f, 0.0f);
 
-            Vector3[] neighbourIndexFlagPairs = GetNeighbourIndexFlagPairs(i);
-            for (int n = 0; n < 12; ++n)
+            Vector2[] neighbourIndexFlagPairs = GetNeighbourIndexFlagPairs(i);
+            for (int n = 0; n < numNeighbours; ++n)
             {
                 neighbours[neighboursArrayIndex] = neighbourIndexFlagPairs[n];
                 neighboursArrayIndex++;
@@ -410,12 +380,17 @@ public class MassSpringSystem3D : MonoBehaviour
         //n, ne, e, se, s, sw, w, nw; => TODO : also has to include neighbors in a 3D grid 
         //int[] neighbours = new int[9] {index + GridResX, index + GridResX + 1, index + 1, index - GridResX + 1,
           //                             index - GridResX, index - GridResX - 1, index - 1, index + GridResX - 1, index + GridResY};
+        // TODO: this should have numNeighbours elements (=32 for 3D), see compute shader.
+        // important that the ordering is exactly the same as used in the compute shader,
+        // for example: the neighbors as above, then the up-center and then other up- neighbours clockwise, then down-center and the other down- neighbours clockwise --strank
         int[] neighbours = new int[20] {index + GridResX, index + GridResX + 1, index + 1, index - GridResX + 1,
                                        index - GridResX, index - GridResX - 1, index - 1, index + GridResX - 1, index + GridResY, index + GridResY + 1, index - GridResY + 1,
                                        index - GridResY, index - GridResY - 1, index + GridResY - 1, index + GridResZ, index + GridResZ + 1, index - GridResZ + 1, index - GridResZ, index - GridResZ - 1, index + GridResZ - 1 };
 
         return neighbours;
     }
+
+    // TODO: needs functions for the new neighbours in 3D: up-___ and down-___
 
     /** The followin functions check whether neighbouring indexes (nIdx) exist within a grid of given
      *  x dimension (gridSideX) and number of vertices (maxIdx).
@@ -468,16 +443,19 @@ public class MassSpringSystem3D : MonoBehaviour
     {
         return nIdy >= 0 && nIdy < maxIdy;
     }
-        /** Fill and return an array of Vector2 where x = neighbour position and y = neighbour exists in grid, 
-         *  including both direct neighbour positions and "bend" positions.
-         *  Bend positions are 2 grid spaces away on both x and y axes, and implement
-         *  resistance to bending in the mass spring grid.
-         *  
-         *  Neighbours are listed in 'clockwise' order of direct neighbours followed by clockwise bend neighbour positions:
-         *  north, north-east, east, south-east, south, south-west, west, north-west, north-bend, east-bend, south-bend, west-bend. 
-         */
-        public Vector3[] GetNeighbourIndexFlagPairs(int index)// the index here is the vertcount 
+        
+    /** Fill and return an array of Vector2 where x = neighbour position and y = neighbour exists in grid, 
+     *  including both direct neighbour positions and "bend" positions.
+     *  Bend positions are 2 grid spaces away on both x and y axes, and implement
+     *  resistance to bending in the mass spring grid.
+     *  
+     *  Neighbours are listed in 'clockwise' order of direct neighbours followed by clockwise bend neighbour positions:
+     *  north, north-east, east, south-east, south, south-west, west, north-west, north-bend, east-bend, south-bend, west-bend. 
+     */
+    public Vector3[] GetNeighbourIndexFlagPairs(int index)// the index here is the vertcount 
     {
+        //TODO: needs to use the same numNeighbours (32) neighbours as the compute shader in the same order! --strank
+
         //n, ne, e, se, s, sw, w, nw, nb, eb, sb, wb
         int[] neighburIndexes = GetNeighbours(index);
         //Debug.Log(index + "grid res X" + GridResX + "grid res Y" + GridResY + "neighbur indices" + neighburIndexes[5]);
@@ -492,8 +470,7 @@ public class MassSpringSystem3D : MonoBehaviour
 
         /** Depending on the specific neighbour position, we need to check varying bounds conditions.
          */
-        //Vector3[] neighbourFlagPairs = new Vector3[12];
-        Vector3[] neighbourFlagPairs = new Vector3[30];
+        Vector3[] neighbourFlagPairs = new Vector3[numNeighbours];
         /*for (int i = 0; i < 30; ++i)
         {
             int idx = neighbours[i];
