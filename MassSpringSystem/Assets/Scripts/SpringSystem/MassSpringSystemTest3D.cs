@@ -11,7 +11,7 @@ using UnityEngine.Rendering;
 // MassSpringSystem.compute shader.
 //===========================================================================================
 
-    public static class SpringComputeShaderProperties
+    public static class SpringComputeShaderPropertiesTest3D
     {
         public const string PositionBufferName = "posBuffer";
         public const string VelocityBufferName = "velBuffer";
@@ -29,7 +29,7 @@ using UnityEngine.Rendering;
     // SpringRenderShader.shader.
     //===========================================================================================
 
-    public static class MassSpringRenderShaderProperties
+    public static class MassSpringRenderShaderPropertiesTest3D
     {
         public const string PositionsBuffer = "buf_Points";
         public const string DebugBuffer = "buf_Debug";
