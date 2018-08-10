@@ -92,7 +92,7 @@ public class MassSpringSystem3D : MonoBehaviour
     /** The controller of the game object spawner object.
      */
     public MassSpawner Spawner;
-    public InstantiateVert VertSpawner;
+    //public InstantiateVert VertSpawner;
 
     /** The controller of the touch and mouse input handler object.
      */
@@ -108,7 +108,7 @@ public class MassSpringSystem3D : MonoBehaviour
      */
     private ComputeBuffer debugBuffer;
     private ComputeBuffer propertiesBuffer;
-    // We fill a buffer of grid neigbour positions and send it to the compute buffer on intialisation, such that 
+    // We fill a buffer of grid neigbour positions (the grid needs to be defined as the bounds of the animated model) and send it to the compute buffer on intialisation, such that 
     // we have access to neughbouring positions in our compute kernels. The neighbours buffer is a buffer of Vector2
     // elements, where the x of each element is the neighbour position and the y is whether that position exists within
     // the bounds of the grid.
@@ -134,7 +134,7 @@ public class MassSpringSystem3D : MonoBehaviour
     private const int gridUnitSideZ = 7; // leave it at 7 for now
     private const int numThreadsPerGroupX = 4;
     private const int numThreadsPerGroupY = 4;
-    private const int numThreadsPerGroupZ = 4; // leave it at 4 for now
+    private const int numThreadsPerGroupZ = 1; // leave it at 1 for now
 
     /** The resolution of our entire grid, according to the resolution and layout of the individual
      *  blocks processed in parallel by the compute shader. Include 3rd dimenion Z by iniitalising:
@@ -283,7 +283,7 @@ public class MassSpringSystem3D : MonoBehaviour
         Vector2[] neighbours = new Vector2[VertCount * numNeighbours];
         int neighboursArrayIndex = 0;
         for (int i = 0; i < VertCount; i++)
-        {
+        {//calculating 3D coordinates
             float x = ((i % GridResX - GridResX / 2.0f) / GridResX) * GetWorldGridSideLengthX();
             float y = ((i / GridResX - GridResY / 2.0f) / GridResY) * GetWorldGridSideLengthY();
             // TODO: make sure this actually calculates the correct z coordinate! with debug.log for example --strank
@@ -392,7 +392,7 @@ public class MassSpringSystem3D : MonoBehaviour
     // TODO: needs functions for the new neighbours in 3D: up-___ and down-___
 
     /** The followin functions check whether neighbouring indexes (nIdx) exist within a grid of given
-     *  x dimension (gridSideX) and number of vertices (maxIdx).
+     *  x & y dimension (gridSideX) & (gridSideY) and number of vertices (maxIdx) & (maxIdy).
      */
     bool eastNeighbourExists(int nIdx, int gridSideX, int maxIdx)
     {
@@ -470,7 +470,7 @@ public class MassSpringSystem3D : MonoBehaviour
         /** Depending on the specific neighbour position, we need to check varying bounds conditions.
          */
         Vector2[] neighbourFlagPairs = new Vector2[numNeighbours];
-        /*for (int i = 0; i < 30; ++i)
+        for (int i = 0; i < 20; ++i)
         {
             int idx = neighbours[i];
             float flag = 0.0f;
@@ -488,43 +488,43 @@ public class MassSpringSystem3D : MonoBehaviour
                 flag = westNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
             else if (i == 11)
                 flag = westBendNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
-            neighbourFlagPairs[i] = new Vector3(idx, flag);
-        }*/
-        for (int i = 0; i < 30; ++i)
+            neighbourFlagPairs[i] = new Vector2(idx, flag);
+        }
+       /* for (int i = 0; i <= 20; ++i)
         {
             int idx = neighbours[i];
             int idy = neighbours[i];
             float flag = 0.0f;
             if (i % 4 == 0 || i == 10)
-                flag = verticalNeighbourExists(idx, vertexCount) ? 1.0f : 0.0f;
+                flag = verticalNeighbourExists(idx, VertCount) ? 1.0f : 0.0f;
             else if (i == 1 || i == 3)
-                flag = verticalNeighbourExists(idx, vertexCount) && eastNeighbourExists(idx, GridResX, vertexCount) ? 1.0f : 0.0f;
+                flag = verticalNeighbourExists(idx, VertCount) && eastNeighbourExists(idx, GridResX, VertCount) ? 1.0f : 0.0f;
             else if (i == 2)
-                flag = eastNeighbourExists(idx, GridResX, vertexCount) ? 1.0f : 0.0f;
+                flag = eastNeighbourExists(idx, GridResX, VertCount) ? 1.0f : 0.0f;
             else if (i == 9)
-                flag = eastBendNeighbourExists(idx, GridResX, vertexCount) ? 1.0f : 0.0f;
+                flag = eastBendNeighbourExists(idx, GridResX, VertCount) ? 1.0f : 0.0f;
             else if (i == 5 || i == 7)
-                flag = verticalNeighbourExists(idx, vertexCount) && westNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
+                flag = verticalNeighbourExists(idx, VertCount) && westNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
             else if (i == 6)
                 flag = westNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
             else if (i == 11)
                 flag = westBendNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
             if (i % 8 == 0 || i == 12)
-                flag = verticalNeighbourExists1(idy, vertexCount) ? 1.0f : 0.0f;
+                flag = verticalNeighbourExists1(idy, VertCount) ? 1.0f : 0.0f;
             else if (i == 13 || i == 15)
-                flag = verticalNeighbourExists1(idy, vertexCount) && eastNeighbourExists1(idy, GridResY, vertexCount) ? 1.0f : 0.0f;
+                flag = verticalNeighbourExists1(idy, VertCount) && eastNeighbourExists1(idy, GridResY, VertCount) ? 1.0f : 0.0f;
             else if (i == 24)
-                flag = eastNeighbourExists1(idy, GridResY, vertexCount) ? 1.0f : 0.0f;
+                flag = eastNeighbourExists1(idy, GridResY, VertCount) ? 1.0f : 0.0f;
             else if (i == 19)
-                flag = eastBendNeighbourExists1(idy, GridResY, vertexCount) ? 1.0f : 0.0f;
+                flag = eastBendNeighbourExists1(idy, GridResY, VertCount) ? 1.0f : 0.0f;
             else if (i == 16 || i == 27)
-                flag = verticalNeighbourExists1(idy, vertexCount) && westNeighbourExists1(idy, GridResY) ? 1.0f : 0.0f;
+                flag = verticalNeighbourExists1(idy, VertCount) && westNeighbourExists1(idy, GridResY) ? 1.0f : 0.0f;
             else if (i == 28)
                 flag = westNeighbourExists1(idy, GridResY) ? 1.0f : 0.0f;
             else if (i == 30)
-                flag = westBendNeighbourExists1(idx, GridResX) ? 1.0f : 0.0f;
-            neighbourFlagPairs[i] = new Vector2(idx, flag);
-        }
+                flag = westBendNeighbourExists1(idy, GridResY) ? 1.0f : 0.0f;
+            neighbourFlagPairs[i] = new Vector3(idx, idy, flag);
+        }*/
         return neighbourFlagPairs;
     }
 

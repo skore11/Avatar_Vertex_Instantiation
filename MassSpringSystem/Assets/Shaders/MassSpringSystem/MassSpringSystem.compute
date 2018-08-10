@@ -48,7 +48,7 @@ struct Neighbours
     // one up-center and one down-center neighbour right above and below,
     // and finally the up-bend and down-bend neighbours two above and two below the center.
     // --strank
-float2 neighbours [12];
+float2 neighbours [32];
 };
 
 /** The properties struct holds the physical properties of the grid
@@ -105,9 +105,9 @@ const float3 getForceForNeighbour (const int idx, const int2 nIdx, const float s
     return force *  nIdx.y;
 }
 
-[numthreads (thread_group_size_x, thread_group_size_y, 1)]
+//[numthreads (thread_group_size_x, thread_group_size_y, 1)]
 // need to switch to this with 3D: --strank
-//[numthreads (thread_group_size_x, thread_group_size_y, thread_group_size_z)]
+[numthreads (thread_group_size_x, thread_group_size_y, thread_group_size_z)]
 
 void CSMainVel (uint3 id : SV_DispatchThreadID)
 {
@@ -135,13 +135,13 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     const float  springLength  = propertiesBuffer[0].springLength;
 
     //get the index of the vertex in the overall grid.
-    const int idx = id.x + id.y * sX ;
+    //const int idx = id.x + id.y * sX ;
     // for 3D, the index is based on the z position as well: --strank
-    //const int idx = id.x + id.y * sX + id.z * sX * sY;
+    const int idx = id.x + id.y * sX + id.z * sX * sY;
 
     //max index is the number of vertices in our grid.
-    const int maxIdx = sX * sY;
-    //const int maxIdx = sX * sY * sZ;
+    //const int maxIdx = sX * sY;
+    const int maxIdx = sX * sY * sZ;
 
     // TODO: needs to include the additional neighbours, see above at struct Neighbours definition! -- strank
     int2 northNeighbour     = neighboursBuffer[idx].neighbours [0];
@@ -158,9 +158,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     int2 southBendNeighbour = neighboursBuffer[idx].neighbours [10];
     int2 westBendNeighbour  = neighboursBuffer[idx].neighbours [11];
 
-    /** Our grid is structured to have rigid, non-moving edges.
+    /** Our grid is structured to have rigid, non-moving edges. 
      */
-    const float notEdge = (float) (northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y);
+    //const float notEdge = (float) (northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y);
     
     const float3 northForce      = getForceForNeighbour (idx, northNeighbour,     stiffness, springLength, damping);
     const float3 northEastForce  = getForceForNeighbour (idx, northEastNeighbour, stiffness, springLength, damping);
@@ -184,15 +184,15 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     //m = fa, a = f/m
     const float3 acceleration    = force / (mass == 0.0f ? 1.0f : mass);
     float        delta           = deltaTimeBuffer[0].deltaTime;
-    //notEdge acts like a boolean flag here, zeroing out any vertices that exist along the edges.
-    const float3 vDelta = notEdge * acceleration * delta;
+    //notEdge acts like a boolean flag here, zeroing out any vertices that exist along the edges. Remove notedge to allow for non-rigid edges
+    const float3 vDelta = /*notEdge */ acceleration * delta;
     float3 newVel = velBuffer[idx].vel + vDelta;
     velBuffer[idx].vel = newVel;
 }
 
-[numthreads (thread_group_size_x, thread_group_size_y, 1)]
+//[numthreads (thread_group_size_x, thread_group_size_y, 1)]
 // need to switch to this with 3D: --strank
-//[numthreads (thread_group_size_x, thread_group_size_y, thread_group_size_z)]
+[numthreads (thread_group_size_x, thread_group_size_y, thread_group_size_z)]
 void CSMainPos (uint3 id : SV_DispatchThreadID)
 {
 	//number of points per side, per thread.
@@ -205,9 +205,9 @@ void CSMainPos (uint3 id : SV_DispatchThreadID)
     //const int sZ = gZ * thread_group_size_z; //not needed here --strank
 
     //index y, x, in order to convert to unity space
-    const int idx = id.x + id.y * sX ;
+    //const int idx = id.x + id.y * sX ;
     // for 3D, the index is based on the z position as well: --strank
-    //const int idx = id.x + id.y * sX + id.z * sX * sY;
+    const int idx = id.x + id.y * sX + id.z * sX * sY;
 
     //calculate new positions given new velocities
     const float delta  = deltaTimeBuffer[0].deltaTime;
