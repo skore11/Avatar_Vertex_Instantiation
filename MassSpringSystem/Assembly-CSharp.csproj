@@ -67,8 +67,10 @@
     <Compile Include="Assets\Scripts\SpringSystem\MassSpawner.cs" />
     <Compile Include="Assets\Scripts\SpringSystem\MassSpringSystem.cs" />
     <Compile Include="Assets\Scripts\SpringSystem\MassSpringSystem3D.cs" />
+    <Compile Include="Assets\Scripts\SpringSystem\MassSpringSystemTest3D.cs" />
     <Compile Include="Assets\Scripts\UI\CanvasTouchManager.cs" />
     <None Include="Assets\Shaders\MassSpringSystem\Default.compute" />
+    <None Include="Assets\Shaders\MassSpringSystem\MassSpringSystemTest3D.compute" />
     <None Include="Assets\Shaders\MassRenderShader.shader" />
     <None Include="Assets\Shaders\MassSpringSystem\MassSpringSystem.compute" />
     <Reference Include="UnityEditor.StandardEvents">
