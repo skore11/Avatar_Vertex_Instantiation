@@ -2063,12 +2063,11 @@ MonoBehaviour:
   MassSpringComputeShader: {fileID: 7200000, guid: fd799b4f8449b104c9bc7957ba3c4525,
     type: 3}
   RenderShader: {fileID: 4800000, guid: 98b12bfcc1b1ce6489be7de4cc99f68c, type: 3}
-  Mass: 1
-  Damping: 0.1
+  Mass: 21.7
+  Damping: 0.716
   SpringStiffness: 10
   SpringLength: 0.5
   Spawner: {fileID: 200795920}
-  VertSpawner: {fileID: 0}
   UITouchHandler: {fileID: 640190304}
   MaxTouchForce: 100
   vertices: []

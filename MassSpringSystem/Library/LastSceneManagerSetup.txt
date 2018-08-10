@@ -1,4 +1,4 @@
 sceneSetups:
-- path: Demo/Demo.unity
+- path: Assets/Demo_withAvatar_InstanttiatetrialsV2_massSpringSkin.unity
   isLoaded: 1
   isActive: 1
