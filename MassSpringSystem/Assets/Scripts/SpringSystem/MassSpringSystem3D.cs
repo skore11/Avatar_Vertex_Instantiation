@@ -457,7 +457,7 @@ public class MassSpringSystem3D : MonoBehaviour
 
         //n, ne, e, se, s, sw, w, nw, nb, eb, sb, wb
         int[] neighburIndexes = GetNeighbours(index);
-        //Debug.Log(index + "grid res X" + GridResX + "grid res Y" + GridResY + "neighbur indices" + neighburIndexes[5]);
+        //Debug.Log(index + "grid res X" + GridResX + "grid res Y" + GridResY + "neighbur indices" + neighburIndexes[5]);// neighburindex[9] +(gridresX * gridresY)
         int[] bendIndexes = { neighburIndexes[0] + GridResX, neighburIndexes[2] + 1, neighburIndexes[4] - GridResX, neighburIndexes[6] - 1,
                               neighburIndexes[0] + GridResY, neighburIndexes[2] + 1, neighburIndexes[4] - GridResY, neighburIndexes[6] -1};
         int[] neighbours = new int[24];//check this value
@@ -475,7 +475,7 @@ public class MassSpringSystem3D : MonoBehaviour
             int idx = neighbours[i];
             float flag = 0.0f;
             if (i % 4 == 0 || i == 10)
-                flag = verticalNeighbourExists(idx, VertCount) ? 1.0f : 0.0f;
+                flag = verticalNeighbourExists(idx, VertCount) ? 1.0f : 0.0f;//bool
             else if (i == 1 || i == 3)
                 flag = verticalNeighbourExists(idx, VertCount) && eastNeighbourExists(idx, GridResX, VertCount) ? 1.0f : 0.0f;
             else if (i == 2)

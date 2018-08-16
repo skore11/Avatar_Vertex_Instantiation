@@ -294,7 +294,7 @@ using UnityEngine.Rendering;
             {
                 float x = ((i % GridResX - GridResX / 2.0f) / GridResX) * GetWorldGridSideLengthX();
                 float y = ((i / GridResX - GridResY / 2.0f) / GridResY) * GetWorldGridSideLengthY();
-                float z = ((i / GridResY - GridResZ / 2.0f) / GridResZ) * GetWorldGridSideLengthZ();
+                float z = ((i / GridResY - GridResZ / 2.0f) / GridResZ) * GetWorldGridSideLengthZ();// add debug log statemenyt after this to check the values
 
                 positions[i] = new Vector3(x, y, z);
                 velocities[i] = new Vector3(0.0f, 0.0f, 0.0f);
