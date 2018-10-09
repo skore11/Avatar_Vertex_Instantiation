@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 //===========================================================================================
 // Simple class that holds various property names and attributes for the 
@@ -165,9 +166,9 @@ public class MassSpringSystem3D : MonoBehaviour
 // setting this cannot work with a predefined lattice, needs to use the number defined by the lattice size --strank
 //    private int vertexCount = 0;
     // @HideInInspector
-    public Vector3[] vertices;
+   // public Vector3[] vertices;
     // @HideInInspector
-    Vector3[] normals;
+    //Vector3[] normals;
     //===========================================================================================
     // Overrides
     //===========================================================================================
@@ -178,7 +179,7 @@ public class MassSpringSystem3D : MonoBehaviour
 //        vertexCount = mesh.vertexCount; // see comment above --strank
         // TODO for later: think again, about how to use the mesh data for initialasing.
         Initialise();
-        
+        //Debug.Log(GridResX); Debug.Log(GridResY);
     }
 
     void Update()
@@ -229,23 +230,17 @@ public class MassSpringSystem3D : MonoBehaviour
      */
     public float GetWorldGridSideLengthX()
     {
-        //return GridResX * SpringLength;
-        return gameObject.transform.localScale.x;// local scale of avatar
-        //return gameObject.GetComponent<SkinnedMeshRenderer>().bounds.extents.x;
+        return GridResX * SpringLength;
     }
 
     public float GetWorldGridSideLengthY()
     {
-        //return GridResY * SpringLength;
-        return gameObject.transform.localScale.y;
-        //return gameObject.GetComponent<SkinnedMeshRenderer>().bounds.extents.y;
+        return GridResY * SpringLength;
     }
 
     public float GetWorldGridSideLengthZ()
     {
-        //return GridResY * SpringLength;
-        return gameObject.transform.localScale.z;
-        //return gameObject.GetComponent<SkinnedMeshRenderer>().bounds.extents.z;
+        return GridResZ * SpringLength;
     }
     //===========================================================================================
     // Construction / Destruction
@@ -261,7 +256,7 @@ public class MassSpringSystem3D : MonoBehaviour
         velocityBuffer = new ComputeBuffer(VertCount, sizeof(float) * 3);
         externalForcesBuffer = new ComputeBuffer(VertCount, sizeof(float) * 3);
         debugBuffer = new ComputeBuffer(VertCount, sizeof(float) * 3);
-        neighboursBuffer = new ComputeBuffer(VertCount, sizeof(float) * numNeighbours * 2); // 2D: 24 = 12 float pairs; 3D: 64 = 32 float pairs
+        neighboursBuffer = new ComputeBuffer(VertCount, sizeof(float) * numNeighbours * 2); // 2D: 24 = 12 float pairs; 3D: 64 = 32 float pairs (index, and is-it-inside-bounds flag)
         propertiesBuffer = new ComputeBuffer(SpringComputeShaderProperties3D.NumProperties, sizeof(float));
         deltaTimeBuffer = new ComputeBuffer(1, sizeof(float));
 
@@ -282,24 +277,33 @@ public class MassSpringSystem3D : MonoBehaviour
         Vector3[] extForces = new Vector3[VertCount];
         Vector2[] neighbours = new Vector2[VertCount * numNeighbours];
         int neighboursArrayIndex = 0;
-        for (int i = 0; i < VertCount; i++)
-        {//calculating 3D coordinates
-            float x = ((i % GridResX - GridResX / 2.0f) / GridResX) * GetWorldGridSideLengthX();
-            float y = ((i / GridResX - GridResY / 2.0f) / GridResY) * GetWorldGridSideLengthY();
-            // TODO: make sure this actually calculates the correct z coordinate! with debug.log for example --strank
-            float z = ((i / GridResZ - GridResZ / 2.0f / GridResZ)) * GetWorldGridSideLengthZ();
-
-            positions[i] = new Vector3(x, y, z);
-            velocities[i] = new Vector3(0.0f, 0.0f, 0.0f);
-            extForces[i] = new Vector3(0.0f, 0.0f, 0.0f);
-
-            Vector2[] neighbourIndexFlagPairs = GetNeighbourIndexFlagPairs(i);
-            for (int n = 0; n < numNeighbours; ++n)
+        int vertex = 0;
+        // calculating 3D coordinates: innermost loop is x, then y, then z. this order is expected by shader!
+        for (int k = 0; k < GridResZ; k++)
+        {
+            float z = ((k - GridResZ / 2.0f) / GridResZ) * GetWorldGridSideLengthZ();
+            for (int j = 0; j < GridResY; j++)
             {
-                neighbours[neighboursArrayIndex] = neighbourIndexFlagPairs[n];
-                neighboursArrayIndex++;
+                float y = ((j - GridResY / 2.0f) / GridResY) * GetWorldGridSideLengthY();
+                for (int i = 0; i < GridResX; i++)
+                {
+                    float x = ((i - GridResX / 2.0f) / GridResX) * GetWorldGridSideLengthX();
+                    //Debug.Log("x " + x + " y " + y + " z " + z);
+                    positions[vertex] = new Vector3(x, y, z);
+                    velocities[vertex] = new Vector3(0.0f, 0.0f, 0.0f);
+                    extForces[vertex] = new Vector3(0.0f, 0.0f, 0.0f);
+
+                    Vector2[] neighbourIndexFlagPairs = GetNeighbourIndexFlagPairs(vertex, i, j, k);
+                    for (int n = 0; n < 32; ++n)
+                    {
+                        neighbours[neighboursArrayIndex] = neighbourIndexFlagPairs[n];
+                        neighboursArrayIndex++;
+                    }
+                    vertex++;
+                }
             }
         }
+        
         positionBuffer.SetData(positions);// setting the position buffer that is sent to the compute shader wit the positions of the vertices count
         velocityBuffer.SetData(velocities);
         debugBuffer.SetData(positions);
@@ -346,10 +350,8 @@ public class MassSpringSystem3D : MonoBehaviour
         
         //In order to initialise for 3D, comment out for review, need to define both gridUnitSideZ & numThreadsPerGroupZ based on required resolution:
         GridResZ  = gridUnitSideZ * numThreadsPerGroupZ;
-        //Similarily the full VertCount needs to be :
-        //VertCount = GridResX * GridResY * GridResZ; 
-        VertCount = GridResX * GridResY;
-        //vertexCount = GridResX * GridResY;// this is not correct, for testing we need to see that all vertices part of the mass spring system are the vertices of our mesh.
+        
+        VertCount = GridResX * GridResY * GridResZ; 
         CreateMaterialFromRenderShader();
         CreateBuffers();// creates all the buffers for positions, velocity, neighbors ,forces  also finds both kernels Poskernel and Velkernel
         MassSpringComputeShader.SetBuffer(VelKernel/*PosKernel*/, SpringComputeShaderProperties.NeighboursBufferName, neighboursBuffer);// set neighbors buffer
@@ -378,80 +380,41 @@ public class MassSpringSystem3D : MonoBehaviour
     {
         //n, ne, e, se, s, sw, w, nw; => TODO : also has to include neighbors in a 3D grid 
         //int[] neighbours = new int[9] {index + GridResX, index + GridResX + 1, index + 1, index - GridResX + 1,
-          //                             index - GridResX, index - GridResX - 1, index - 1, index + GridResX - 1, index + GridResY};
+        //                             index - GridResX, index - GridResX - 1, index - 1, index + GridResX - 1, index + GridResY};
         // TODO: this should have numNeighbours elements (=32 for 3D), see compute shader.
         // important that the ordering is exactly the same as used in the compute shader,
         // for example: the neighbors as above, then the up-center and then other up- neighbours clockwise, then down-center and the other down- neighbours clockwise --strank
-        int[] neighbours = new int[20] {index + GridResX, index + GridResX + 1, index + 1, index - GridResX + 1,
-                                       index - GridResX, index - GridResX - 1, index - 1, index + GridResX - 1, index + GridResY, index + GridResY + 1, index - GridResY + 1,
-                                       index - GridResY, index - GridResY - 1, index + GridResY - 1, index + GridResZ, index + GridResZ + 1, index - GridResZ + 1, index - GridResZ, index - GridResZ - 1, index + GridResZ - 1 };
-
+        // int[] neighbours = new int[14] {index + GridResX, index + GridResX + 1, index + 1, index - GridResX + 1,
+        //                              index - GridResX, index - GridResX - 1, index - 1, index + GridResX - 1, index + GridResY, index + GridResY + 1, index - GridResY + 1,
+        //                            index - GridResY, index - GridResY - 1, index + GridResY - 1 };
+        //change to 26 neighbors; check notes; up (9 neighbors) and below (9 neighbors)
+        int[] neighbours = new int[26] {index + GridResX, index + GridResX + 1, index + 1, index - GridResX + 1,
+                                       index - GridResX, index - GridResX - 1, index - 1, index + GridResX - 1,
+                                       index + (GridResX * GridResY), index + (GridResX * GridResY) + GridResX, index + (GridResX * GridResY) + GridResX +1, index + (GridResX * GridResY) + 1 /*GridResY*/,
+                                       index + (GridResX * GridResY) - GridResX +1, index + (GridResX * GridResY) - GridResX, index + (GridResX * GridResY) - GridResX -1, index + (GridResX * GridResY) - 1/*GridResY*/, index + (GridResX * GridResY) + GridResX -1,
+        index - (GridResX * GridResY), index - (GridResX * GridResY) + GridResX, index - (GridResX * GridResY) + GridResX + 1, index - (GridResX * GridResY) + 1 /*GridResY*/,
+                                       index - (GridResX * GridResY) - GridResX + 1, index - (GridResX * GridResY) - GridResX, index - (GridResX * GridResY) - GridResX - 1, index - (GridResX * GridResY) - 1/*GridResY*/, index - (GridResX * GridResY) + GridResX - 1};
+        //Debug.Log(GridResX);Debug.Log( GridResY);
+        //Debug.Log(index + GridResX);//ask stefan about the GridResX; as of now it is equal to 60
         return neighbours;
     }
 
-    // TODO: needs functions for the new neighbours in 3D: up-___ and down-___
+    List<int> eastIndices = new List<int> {1,2,3,10,11,12,19,20,21,27};
+    List<int> westIndices = new List<int> {5,6,7,14,15,16,23,24,25,29};
+    List<int> northIndices = new List<int> {0,1,7,9,10,16,18,19,25,26};
+    List<int> southIndices = new List<int> {3,4,5,12,13,14,21,22,23,28};
+    List<int> upIndices = new List<int> {8,9,10,11,12,13,14,15,16,30};
+    List<int> downIndices = new List<int> {17,18,19,20,21,22,23,24,25,31};
 
-    /** The followin functions check whether neighbouring indexes (nIdx) exist within a grid of given
-     *  x & y dimension (gridSideX) & (gridSideY) and number of vertices (maxIdx) & (maxIdy).
-     */
-    bool eastNeighbourExists(int nIdx, int gridSideX, int maxIdx)
-    {
-        return nIdx % gridSideX > 0 && nIdx < maxIdx;
-    }
-
-    bool eastBendNeighbourExists(int nIdx, int gridSideX, int maxIdx)
-    {
-        return nIdx % gridSideX > 1 && nIdx < maxIdx;
-    }
-
-    bool westNeighbourExists(int nIdx, int gridSideX)
-    {
-        return (nIdx % gridSideX) < (gridSideX - 1) && nIdx >= 0;
-    }
-
-    bool westBendNeighbourExists(int nIdx, int gridSideX)
-    {
-        return (nIdx % gridSideX) < (gridSideX - 2) && nIdx >= 0;
-    }
-
-    bool verticalNeighbourExists(int nIdx, int maxIdx)
-    {
-        return nIdx >= 0 && nIdx < maxIdx;
-    }
-    bool eastNeighbourExists1(int nIdy, int gridSideY, int maxIdy)
-    {
-        return nIdy % gridSideY > 0 && nIdy < maxIdy;
-    }
-
-    bool eastBendNeighbourExists1(int nIdy, int gridSideY, int maxIdy)
-    {
-        return nIdy % gridSideY > 1 && nIdy < maxIdy;
-    }
-
-    bool westNeighbourExists1(int nIdy, int gridSideY)
-    {
-        return (nIdy % gridSideY) < (gridSideY - 1) && nIdy >= 0;
-    }
-
-    bool westBendNeighbourExists1(int nIdy, int gridSideY)
-    {
-        return (nIdy % gridSideY) < (gridSideY - 2) && nIdy >= 0;
-    }
-
-    bool verticalNeighbourExists1(int nIdy, int maxIdy)
-    {
-        return nIdy >= 0 && nIdy < maxIdy;
-    }
-        
     /** Fill and return an array of Vector2 where x = neighbour position and y = neighbour exists in grid, 
      *  including both direct neighbour positions and "bend" positions.
-     *  Bend positions are 2 grid spaces away on both x and y axes, and implement
+     *  Bend positions are 2 grid spaces away on both x and y and z axes, and implement
      *  resistance to bending in the mass spring grid.
      *  
      *  Neighbours are listed in 'clockwise' order of direct neighbours followed by clockwise bend neighbour positions:
      *  north, north-east, east, south-east, south, south-west, west, north-west, north-bend, east-bend, south-bend, west-bend. 
      */
-    public Vector2[] GetNeighbourIndexFlagPairs(int index)// the index here is the vertcount 
+    public Vector2[] GetNeighbourIndexFlagPairs(int index, int xLoopIndex, int yLoopIndex, int zLoopIndex)
     {
         //TODO: needs to use the same numNeighbours (32) neighbours as the compute shader in the same order! --strank
 
@@ -459,80 +422,79 @@ public class MassSpringSystem3D : MonoBehaviour
         int[] neighburIndexes = GetNeighbours(index);
         //Debug.Log(index + "grid res X" + GridResX + "grid res Y" + GridResY + "neighbur indices" + neighburIndexes[5]);// neighburindex[9] +(gridresX * gridresY)
         int[] bendIndexes = { neighburIndexes[0] + GridResX, neighburIndexes[2] + 1, neighburIndexes[4] - GridResX, neighburIndexes[6] - 1,
-                              neighburIndexes[0] + GridResY, neighburIndexes[2] + 1, neighburIndexes[4] - GridResY, neighburIndexes[6] -1};
-        int[] neighbours = new int[24];//check this value
+                              neighburIndexes[8] + (GridResX * GridResY), neighburIndexes[17] - (GridResX * GridResY)};//3D 
+        int[] neighbours = new int[32];//check this value
         //Debug.Log(bendIndexes[0] + "2" + bendIndexes[1] + "3" + bendIndexes[2] + "4" + bendIndexes[3]);
         //Debug.Log(neighbours[1]);
 
         neighburIndexes.CopyTo(neighbours, 0);// copies everything from array to another, starting from the given index (here it is from 0th index)
-        bendIndexes.CopyTo(neighbours, 16);//check
+        bendIndexes.CopyTo(neighbours, 26);//check
 
         /** Depending on the specific neighbour position, we need to check varying bounds conditions.
          */
-        Vector2[] neighbourFlagPairs = new Vector2[numNeighbours];
-        for (int i = 0; i < 20; ++i)
+        Vector2[] neighbourFlagPairs = new Vector2[32];
+        for (int i = 0; i < 32; ++i)
         {
-            int idx = neighbours[i];
-            float flag = 0.0f;
-            if (i % 4 == 0 || i == 10)
-                flag = verticalNeighbourExists(idx, VertCount) ? 1.0f : 0.0f;//bool
-            else if (i == 1 || i == 3)
-                flag = verticalNeighbourExists(idx, VertCount) && eastNeighbourExists(idx, GridResX, VertCount) ? 1.0f : 0.0f;
-            else if (i == 2)
-                flag = eastNeighbourExists(idx, GridResX, VertCount) ? 1.0f : 0.0f;
-            else if (i == 9)
-                flag = eastBendNeighbourExists(idx, GridResX, VertCount) ? 1.0f : 0.0f;
-            else if (i == 5 || i == 7)
-                flag = verticalNeighbourExists(idx, VertCount) && westNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
-            else if (i == 6)
-                flag = westNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
-            else if (i == 11)
-                flag = westBendNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
-            neighbourFlagPairs[i] = new Vector2(idx, flag);
+            int id = neighbours[i];
+            float flag = 1.0f;
+            if (id < 0 || id >= VertCount)
+            {
+                flag = 0f;
+            }
+            else
+            {
+                if ((xLoopIndex == 0) && (westIndices.Contains(i)))
+                {
+                    flag = 0f;
+                }
+                if ((xLoopIndex == 1) && (i == 29))
+                {
+                    flag = 0f;
+                }
+                if ((xLoopIndex == GridResX - 1) && (eastIndices.Contains(i)))
+                {
+                    flag = 0f;
+                }
+                if ((xLoopIndex == GridResX - 2) && (i == 27))
+                {
+                    flag = 0f;
+                }
+                if ((yLoopIndex == 0) && (northIndices.Contains(i)))
+                {
+                    flag = 0f;
+                }
+                if ((yLoopIndex == 1) && (i == 26))
+                {
+                    flag = 0f;
+                }
+                if ((yLoopIndex == GridResY - 1) && (southIndices.Contains(i)))
+                {
+                    flag = 0f;
+                }
+                if ((yLoopIndex == GridResY - 2) && (i == 28))
+                {
+                    flag = 0f;
+                }
+                if ((zLoopIndex == 0) && (upIndices.Contains(i)))
+                {
+                    flag = 0f;
+                }
+                if ((zLoopIndex == 1) && (i == 30))
+                {
+                    flag = 0f;
+                }
+                if ((zLoopIndex == GridResZ - 1) && (downIndices.Contains(i)))
+                {
+                    flag = 0f;
+                }
+                if ((zLoopIndex == GridResZ - 2) && (i == 31))
+                {
+                    flag = 0f;
+                }
+            }
+            neighbourFlagPairs[i] = new Vector2(id, flag);
         }
-       /* for (int i = 0; i <= 20; ++i)
-        {
-            int idx = neighbours[i];
-            int idy = neighbours[i];
-            float flag = 0.0f;
-            if (i % 4 == 0 || i == 10)
-                flag = verticalNeighbourExists(idx, VertCount) ? 1.0f : 0.0f;
-            else if (i == 1 || i == 3)
-                flag = verticalNeighbourExists(idx, VertCount) && eastNeighbourExists(idx, GridResX, VertCount) ? 1.0f : 0.0f;
-            else if (i == 2)
-                flag = eastNeighbourExists(idx, GridResX, VertCount) ? 1.0f : 0.0f;
-            else if (i == 9)
-                flag = eastBendNeighbourExists(idx, GridResX, VertCount) ? 1.0f : 0.0f;
-            else if (i == 5 || i == 7)
-                flag = verticalNeighbourExists(idx, VertCount) && westNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
-            else if (i == 6)
-                flag = westNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
-            else if (i == 11)
-                flag = westBendNeighbourExists(idx, GridResX) ? 1.0f : 0.0f;
-            if (i % 8 == 0 || i == 12)
-                flag = verticalNeighbourExists1(idy, VertCount) ? 1.0f : 0.0f;
-            else if (i == 13 || i == 15)
-                flag = verticalNeighbourExists1(idy, VertCount) && eastNeighbourExists1(idy, GridResY, VertCount) ? 1.0f : 0.0f;
-            else if (i == 24)
-                flag = eastNeighbourExists1(idy, GridResY, VertCount) ? 1.0f : 0.0f;
-            else if (i == 19)
-                flag = eastBendNeighbourExists1(idy, GridResY, VertCount) ? 1.0f : 0.0f;
-            else if (i == 16 || i == 27)
-                flag = verticalNeighbourExists1(idy, VertCount) && westNeighbourExists1(idy, GridResY) ? 1.0f : 0.0f;
-            else if (i == 28)
-                flag = westNeighbourExists1(idy, GridResY) ? 1.0f : 0.0f;
-            else if (i == 30)
-                flag = westBendNeighbourExists1(idy, GridResY) ? 1.0f : 0.0f;
-            neighbourFlagPairs[i] = new Vector3(idx, idy, flag);
-        }*/
         return neighbourFlagPairs;
-    }
-
-    /** Returns whether a given index position is within the bounds of the grid. Our grid is structured to have rigid, non-moving edges.
-     */
-    public bool IndexExists(int index)
-    {
-        return index > GridResX * 2 && index % GridResX > 1 && index % GridResX < GridResX - 2 && index < GridResX * GridResY - 2 && index > GridResY*2 && index % GridResY > 1 && index % GridResY < GridResY - 2;//check again
     }
 
     /** Applies a given pressure value to a given mass index. This pressure is added to the 
@@ -540,9 +502,8 @@ public class MassSpringSystem3D : MonoBehaviour
      */
     public void ApplyPressureToMass(int index, float pressure, ref Vector3[] extForces)
     {
-        if (IndexExists(index))
+        if (index >= 0 && index < extForces.Length)
         {
-            Vector3 f = extForces[index];
             extForces[index] = new Vector3(0.0f, 0.0f, MaxTouchForce * pressure * -1.0f);
         }
     }
@@ -559,24 +520,9 @@ public class MassSpringSystem3D : MonoBehaviour
     /** Takes in an existing touch or mouse event and transforms it into pressure to be applied at
      *  a specific point on the grid.
      */
-    public void UITouchInputUpdated(float x, float y, float z,  float pressure, ref Vector3[] extForces)
+    public void UITouchInputUpdated(int index,  float pressure, ref Vector3[] extForces)
     {
-        float WorldGridSideLengthX = GetWorldGridSideLengthX();
-        float WorldGridSideLengthY = GetWorldGridSideLengthY();
-        float WorldGridSideLengthZ = GetWorldGridSideLengthZ();
-
-        int xPosition = (int)(((x + (WorldGridSideLengthX / 2.0f)) / WorldGridSideLengthX) * GridResX);
-        int yPosition = (int)(((y + (WorldGridSideLengthY / 2.0f)) / WorldGridSideLengthY) * GridResY);
-        int zPosition = (int)(((z + (WorldGridSideLengthZ / 2.0f)) / WorldGridSideLengthZ) * GridResZ);
-
-
-
-
-        int index = xPosition + zPosition * GridResX * GridResZ;
-        // int index = xPosition + yPosition + zPosition * GridResX * GridResY * GridResZ;
-        if (index < 0 || index > VertCount)
-            Debug.Log("Warning: Touch or mouse input generated out of bounds grid index.");
-        
+        Debug.Log("Touch input, pressure applied to masssobj index " + index);
         ApplyPressureToMass(index, pressure, ref extForces);
         ApplyPressureToNeighbours(index, pressure, ref extForces);
     }
@@ -587,11 +533,13 @@ public class MassSpringSystem3D : MonoBehaviour
     {
         Vector3[] extForces = new Vector3[VertCount];  //Comment out the below to revert back to original mass spring
         for (int i = 0; i < VertCount; i++)
+        {
             extForces[i] = new Vector3(0.0f, 0.0f, 0.0f);
-        
-        foreach (Vector3 gridTouch in UITouchHandler.GridTouches)
-            UITouchInputUpdated(gridTouch.x, gridTouch.y, gridTouch.z, gridTouch.z + gridTouch.y + gridTouch.x, ref extForces);
-
+        }
+        foreach (Vector2 gridTouch in UITouchHandler.GridTouches)
+        {
+            UITouchInputUpdated((int) gridTouch.x, gridTouch.y, ref extForces);
+        }
         externalForcesBuffer.SetData(extForces);
 
         UITouchHandler.GridTouches.Clear();

@@ -158,8 +158,6 @@ public class MassSpringSystem : MonoBehaviour
     Mesh mesh;
     //@HideInInspector
     SkinnedMeshRenderer skin;
-    //@HideInInspector
-    private int vertexCount = 0;
     // @HideInInspector
     public Vector3[] vertices;
     // @HideInInspector
@@ -547,7 +545,6 @@ public class MassSpringSystem : MonoBehaviour
     {
         if (IndexExists (index))
         { 
-            Vector3 f = extForces[index];
             extForces[index] = new Vector3 (0.0f, 0.0f, MaxTouchForce * pressure * -1.0f);
         }
     }

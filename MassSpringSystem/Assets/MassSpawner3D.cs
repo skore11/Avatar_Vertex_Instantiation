@@ -34,8 +34,6 @@ public class MassSpawner3D : MonoBehaviour
     private ArrayList Primitives = new ArrayList();
     private Vector3[] positions;
     SkinnedMeshRenderer skin;
-    //@HideInInspector
-    private int vertexCount = 0;
     Mesh mesh;
     public Vector3[] vertices;
     // @HideInInspector
@@ -49,10 +47,6 @@ public class MassSpawner3D : MonoBehaviour
 
         mesh = skin.sharedMesh;
         print(skin.name);
-
-
-        vertexCount = mesh.vertexCount;
-
     }
 
         void FixedUpdate()

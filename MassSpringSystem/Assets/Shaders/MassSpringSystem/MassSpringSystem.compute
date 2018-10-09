@@ -135,8 +135,7 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     const float  springLength  = propertiesBuffer[0].springLength;
 
     //get the index of the vertex in the overall grid.
-    //const int idx = id.x + id.y * sX ;
-    // for 3D, the index is based on the z position as well: --strank
+    // for 3D, the index is based on the z position as well:
     const int idx = id.x + id.y * sX + id.z * sX * sY;
 
     //max index is the number of vertices in our grid.
@@ -153,15 +152,38 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     int2 westNeighbour      = neighboursBuffer[idx].neighbours [6];
     int2 northWestNeighbour = neighboursBuffer[idx].neighbours [7];
 
-    int2 northBendNeighbour = neighboursBuffer[idx].neighbours [8];
-    int2 eastBendNeighbour  = neighboursBuffer[idx].neighbours [9];
-    int2 southBendNeighbour = neighboursBuffer[idx].neighbours [10];
-    int2 westBendNeighbour  = neighboursBuffer[idx].neighbours [11];
+    int2 up_immediateNeighbour = neighboursBuffer[idx].neighbours[8];
+    int2 up_northNeighbour     = neighboursBuffer[idx].neighbours[9];
+    int2 up_northEastNeighbour = neighboursBuffer[idx].neighbours[10];
+    int2 up_eastNeighbour = neighboursBuffer[idx].neighbours[11];
+    int2 up_southEastNeighbour = neighboursBuffer[idx].neighbours[12];
+    int2 up_southNeighbour = neighboursBuffer[idx].neighbours[13];
+    int2 up_southWestNeighbour = neighboursBuffer[idx].neighbours[14];
+    int2 up_westNeighbour = neighboursBuffer[idx].neighbours[15];
+    int2 up_northWestNeighbour = neighboursBuffer[idx].neighbours[16];
+
+    int2 down_immediateNeighbour = neighboursBuffer[idx].neighbours[17];
+    int2 down_northNeighbour = neighboursBuffer[idx].neighbours[18];
+    int2 down_northEastNeighbour = neighboursBuffer[idx].neighbours[19];
+    int2 down_eastNeighbour = neighboursBuffer[idx].neighbours[20];
+    int2 down_southEastNeighbour = neighboursBuffer[idx].neighbours[21];
+    int2 down_southNeighbour = neighboursBuffer[idx].neighbours[22];
+    int2 down_southWestNeighbour = neighboursBuffer[idx].neighbours[23];
+    int2 down_westNeighbour = neighboursBuffer[idx].neighbours[24];
+    int2 down_northWestNeighbour = neighboursBuffer[idx].neighbours[25];
+
+    int2 northBendNeighbour = neighboursBuffer[idx].neighbours [26];
+    int2 eastBendNeighbour = neighboursBuffer[idx].neighbours[27];
+    int2 southBendNeighbour = neighboursBuffer[idx].neighbours[28];
+    int2 westBendNeighbour = neighboursBuffer[idx].neighbours[29];
+    int2 upBendNeighbour = neighboursBuffer[idx].neighbours[30];
+    int2 downBendNeighbour = neighboursBuffer[idx].neighbours[31];
 
     /** Our grid is structured to have rigid, non-moving edges. 
      */
     //const float notEdge = (float) (northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y);
-    
+    const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
+
     const float3 northForce      = getForceForNeighbour (idx, northNeighbour,     stiffness, springLength, damping);
     const float3 northEastForce  = getForceForNeighbour (idx, northEastNeighbour, stiffness, springLength, damping);
     const float3 eastForce       = getForceForNeighbour (idx, eastNeighbour,      stiffness, springLength, damping);
@@ -171,21 +193,48 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     const float3 westForce       = getForceForNeighbour (idx, westNeighbour,      stiffness, springLength, damping);
     const float3 northWestForce  = getForceForNeighbour (idx, northWestNeighbour, stiffness, springLength, damping);
 
-    const float3 northBendForce  = getForceForNeighbour (idx, northBendNeighbour, stiffness, springLength, damping);
-    const float3 eastBendForce   = getForceForNeighbour (idx, eastBendNeighbour,  stiffness, springLength, damping);
-    const float3 westBendForce   = getForceForNeighbour (idx, southBendNeighbour, stiffness, springLength, damping);
-    const float3 southBendForce  = getForceForNeighbour (idx, westBendNeighbour,  stiffness, springLength, damping);
+    const float3 up_immediateForce = getForceForNeighbour(idx, up_immediateNeighbour, stiffness, springLength, damping);
+    const float3 up_northForce     = getForceForNeighbour(idx, up_northNeighbour, stiffness, springLength, damping);
+    const float3 up_northEastForce = getForceForNeighbour(idx, up_northEastNeighbour, stiffness, springLength, damping);
+    const float3 up_eastForce      = getForceForNeighbour(idx, up_eastNeighbour, stiffness, springLength, damping);
+    const float3 up_southEastForce = getForceForNeighbour(idx, up_southEastNeighbour, stiffness, springLength, damping);
+    const float3 up_southForce = getForceForNeighbour(idx, up_southNeighbour, stiffness, springLength, damping);
+    const float3 up_southWestForce = getForceForNeighbour(idx, up_southWestNeighbour, stiffness, springLength, damping);
+    const float3 up_westForce = getForceForNeighbour(idx, up_westNeighbour, stiffness, springLength, damping);
+    const float3 up_northWestForce = getForceForNeighbour(idx, up_northWestNeighbour, stiffness, springLength, damping);
 
-    const float3 internalForce   = (northForce + eastForce + westForce + southForce + 
-                                    northEastForce + northWestForce + southEastForce + southWestForce +
-                                    northBendForce + eastBendForce + westBendForce + southBendForce);
+    const float3 down_immediateForce = getForceForNeighbour(idx, down_immediateNeighbour, stiffness, springLength, damping);
+    const float3 down_northForce = getForceForNeighbour(idx, down_northNeighbour, stiffness, springLength, damping);
+    const float3 down_northEastForce = getForceForNeighbour(idx, down_northEastNeighbour, stiffness, springLength, damping);
+    const float3 down_eastForce = getForceForNeighbour(idx, down_eastNeighbour, stiffness, springLength, damping);
+    const float3 down_southEastForce = getForceForNeighbour(idx, down_southEastNeighbour, stiffness, springLength, damping);
+    const float3 down_southForce = getForceForNeighbour(idx, down_southNeighbour, stiffness, springLength, damping);
+    const float3 down_southWestForce = getForceForNeighbour(idx, down_southWestNeighbour, stiffness, springLength, damping);
+    const float3 down_westForce = getForceForNeighbour(idx, down_westNeighbour, stiffness, springLength, damping);
+    const float3 down_northWestForce = getForceForNeighbour(idx, down_northWestNeighbour, stiffness, springLength, damping);
+
+    const float3 northBendForce  = getForceForNeighbour(idx, northBendNeighbour, stiffness, springLength, damping);
+    const float3 eastBendForce   = getForceForNeighbour(idx, eastBendNeighbour, stiffness, springLength, damping);
+    const float3 westBendForce   = getForceForNeighbour(idx, southBendNeighbour, stiffness, springLength, damping);
+    const float3 southBendForce  = getForceForNeighbour(idx, westBendNeighbour, stiffness, springLength, damping);
+    const float3 upBendForce = getForceForNeighbour(idx, upBendNeighbour, stiffness, springLength, damping);
+    const float3 downBendForce = getForceForNeighbour(idx, downBendNeighbour, stiffness, springLength, damping);
+
+    const float3 internalForce   = (northForce + eastForce + westForce + southForce +
+        northEastForce + northWestForce + southEastForce + southWestForce +
+        up_immediateForce + up_northForce + up_eastForce + up_westForce + up_southForce +
+        up_northEastForce + up_northWestForce + up_southEastForce + up_southWestForce +
+        down_immediateForce + down_northForce + down_eastForce + down_westForce + down_southForce +
+        down_northEastForce + down_northWestForce + down_southEastForce + down_southWestForce +
+        northBendForce + eastBendForce + westBendForce + southBendForce +
+        upBendForce + downBendForce);
     //Add the external forces from the external forces buffer to the internal neighbour forces.
     const float3 force           = internalForce + externalForcesBuffer[idx].force;
     //m = fa, a = f/m
     const float3 acceleration    = force / (mass == 0.0f ? 1.0f : mass);
     float        delta           = deltaTimeBuffer[0].deltaTime;
     //notEdge acts like a boolean flag here, zeroing out any vertices that exist along the edges. Remove notedge to allow for non-rigid edges
-    const float3 vDelta = /*notEdge */ acceleration * delta;
+    const float3 vDelta = notEdge * acceleration * delta;
     float3 newVel = velBuffer[idx].vel + vDelta;
     velBuffer[idx].vel = newVel;
 }
@@ -195,13 +244,14 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
 [numthreads (thread_group_size_x, thread_group_size_y, thread_group_size_z)]
 void CSMainPos (uint3 id : SV_DispatchThreadID)
 {
-	//number of points per side, per thread.
+    //number of points per side, per thread.
     const int gX   = 7;
     const int gY   = 7;
     const int gZ   = 7;
     //grid side resolution
     const int sX = gX * thread_group_size_x;
     const int sY = gY * thread_group_size_y;
+
     //const int sZ = gZ * thread_group_size_z; //not needed here --strank
 
     //index y, x, in order to convert to unity space
@@ -212,5 +262,5 @@ void CSMainPos (uint3 id : SV_DispatchThreadID)
     //calculate new positions given new velocities
     const float delta  = deltaTimeBuffer[0].deltaTime;
     externalForcesBuffer[idx].force = float3 (0.0f, 0.0f, 0.0f);
-	posBuffer[idx].pos = posBuffer[idx].pos + (velBuffer[idx].vel * delta);
+    posBuffer[idx].pos = posBuffer[idx].pos + (velBuffer[idx].vel * delta);
 }

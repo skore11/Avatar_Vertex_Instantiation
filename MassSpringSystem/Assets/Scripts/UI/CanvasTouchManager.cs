@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System;
 
 enum MouseEventType
 {
@@ -123,9 +124,9 @@ public class CanvasTouchManager : CanvasTouchHandler
             GameObject obj = raycastResult.collider.gameObject;
             if (MassSpringSystem.IsMassUnit (obj.tag))
             {
-                Vector3 p = obj.transform.position;
+                int index = Int32.Parse(obj.name.Substring(7, obj.name.IndexOf(' ') - 7));
                 //need to translate back from unity world space so we use z here rather than y
-                GridTouches.Add (new Vector3 (p.x, p.z, SimulatedPressure));
+                GridTouches.Add (new Vector2 (index, SimulatedPressure));
             }
         }
     }

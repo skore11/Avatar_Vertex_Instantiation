@@ -24,14 +24,14 @@
  */
 
 using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 public class MassSpawner : MonoBehaviour
 {
     public GameObject MassPrefab;
 
     private float     MassUnitSize;
-    private ArrayList Primitives = new ArrayList();
+    private List<GameObject> Primitives = new List<GameObject>();
     private Vector3[] positions;
 
     //===========================================================================================
@@ -41,8 +41,9 @@ public class MassSpawner : MonoBehaviour
     {
         int numPositions = Primitives.Count;
         for (int i = 0; i < numPositions; ++i)
-            ((GameObject)Primitives[i]).transform.position = TranslateToUnityWorldSpace (positions[i]);
-        
+        {
+            Primitives[i].transform.position = TranslateToUnityWorldSpace(positions[i]);
+        }
         }
 
     //===========================================================================================
@@ -57,23 +58,23 @@ public class MassSpawner : MonoBehaviour
     public void SpawnPrimitives (Vector3[] p)
     {
         foreach (GameObject obj in Primitives)
-            Destroy (obj.gameObject);
+        {
+            Destroy(obj.gameObject);
+        }
         Primitives.Clear();
 
         positions = p;
-        int numPositions = positions.Length;
-        Primitives.Clear();
+        int index = 0;
         foreach (Vector3 massPosition in positions)
         {
             //translate y to z so we can use Unity's in-built gravity on the y axis.
             Vector3 worldPosition = TranslateToUnityWorldSpace (massPosition);
 
-            Object     springUnit       = Instantiate (MassPrefab, worldPosition, Quaternion.identity);
-            GameObject springMassObject = (GameObject) springUnit;
-            springMassObject.name = positions.ToString();
+            GameObject springMassObject = Instantiate<GameObject>(MassPrefab, worldPosition, Quaternion.identity, this.transform);
+            springMassObject.name = "MassObj" + index + " " + massPosition.ToString();
             springMassObject.transform.localScale = Vector3.one * MassUnitSize;
-            Primitives.Add (springUnit);
-           
+            Primitives.Add (springMassObject);
+            index++;
         }
         
     }
