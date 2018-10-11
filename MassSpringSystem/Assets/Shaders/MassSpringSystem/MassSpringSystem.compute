@@ -181,8 +181,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
 
     /** Our grid is structured to have rigid, non-moving edges. 
      */
-    //const float notEdge = (float) (northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y);
-    const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
+    const float notEdge = (float) (northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y);
+    //const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
+    //const float notEdge = 1.0f;
 
     const float3 northForce      = getForceForNeighbour (idx, northNeighbour,     stiffness, springLength, damping);
     const float3 northEastForce  = getForceForNeighbour (idx, northEastNeighbour, stiffness, 1.141 * springLength, damping);
@@ -225,9 +226,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
         up_immediateForce + up_northForce + up_eastForce + up_westForce + up_southForce +
         up_northEastForce + up_northWestForce + up_southEastForce + up_southWestForce +
         down_immediateForce + down_northForce + down_eastForce + down_westForce + down_southForce +
-        down_northEastForce + down_northWestForce + down_southEastForce + down_southWestForce +
-        northBendForce + eastBendForce + westBendForce + southBendForce +
-        upBendForce + downBendForce);//simplify and see which combinations of neighbors' forces cause the grid to go crazy or not
+        down_northEastForce + down_northWestForce + down_southEastForce + down_southWestForce);//+
+       // northBendForce + eastBendForce + westBendForce + southBendForce +
+        //upBendForce + downBendForce);//simplify and see which combinations of neighbors' forces cause the grid to go crazy or not
     //Add the external forces from the external forces buffer to the internal neighbour forces.
     const float3 force           = internalForce + externalForcesBuffer[idx].force;
     //m = fa, a = f/m
