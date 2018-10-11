@@ -440,6 +440,7 @@ public class MassSpringSystem3D : MonoBehaviour
             if (id < 0 || id >= VertCount)
             {
                 flag = 0f;
+                id = 0;
             }
             else
             {

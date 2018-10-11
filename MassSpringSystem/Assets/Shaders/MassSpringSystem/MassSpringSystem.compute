@@ -185,40 +185,40 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
 
     const float3 northForce      = getForceForNeighbour (idx, northNeighbour,     stiffness, springLength, damping);
-    const float3 northEastForce  = getForceForNeighbour (idx, northEastNeighbour, stiffness, springLength, damping);
+    const float3 northEastForce  = getForceForNeighbour (idx, northEastNeighbour, stiffness, 1.141 * springLength, damping);
     const float3 eastForce       = getForceForNeighbour (idx, eastNeighbour,      stiffness, springLength, damping);
-    const float3 southEastForce  = getForceForNeighbour (idx, southEastNeighbour, stiffness, springLength, damping);
+    const float3 southEastForce  = getForceForNeighbour (idx, southEastNeighbour, stiffness, 1.141 * springLength, damping);
     const float3 southForce      = getForceForNeighbour (idx, southNeighbour,     stiffness, springLength, damping);
-    const float3 southWestForce  = getForceForNeighbour (idx, southWestNeighbour, stiffness, springLength, damping);
+    const float3 southWestForce  = getForceForNeighbour (idx, southWestNeighbour, stiffness, 1.141 * springLength, damping);
     const float3 westForce       = getForceForNeighbour (idx, westNeighbour,      stiffness, springLength, damping);
-    const float3 northWestForce  = getForceForNeighbour (idx, northWestNeighbour, stiffness, springLength, damping);
+    const float3 northWestForce  = getForceForNeighbour (idx, northWestNeighbour, stiffness, 1.141 * springLength, damping);
 
     const float3 up_immediateForce = getForceForNeighbour(idx, up_immediateNeighbour, stiffness, springLength, damping);
-    const float3 up_northForce     = getForceForNeighbour(idx, up_northNeighbour, stiffness, springLength, damping);
-    const float3 up_northEastForce = getForceForNeighbour(idx, up_northEastNeighbour, stiffness, springLength, damping);
-    const float3 up_eastForce      = getForceForNeighbour(idx, up_eastNeighbour, stiffness, springLength, damping);
-    const float3 up_southEastForce = getForceForNeighbour(idx, up_southEastNeighbour, stiffness, springLength, damping);
-    const float3 up_southForce = getForceForNeighbour(idx, up_southNeighbour, stiffness, springLength, damping);
-    const float3 up_southWestForce = getForceForNeighbour(idx, up_southWestNeighbour, stiffness, springLength, damping);
-    const float3 up_westForce = getForceForNeighbour(idx, up_westNeighbour, stiffness, springLength, damping);
-    const float3 up_northWestForce = getForceForNeighbour(idx, up_northWestNeighbour, stiffness, springLength, damping);
+    const float3 up_northForce     = getForceForNeighbour(idx, up_northNeighbour, stiffness, 1.141 * springLength, damping);
+    const float3 up_northEastForce = getForceForNeighbour(idx, up_northEastNeighbour, stiffness, 1.732 * springLength, damping);
+    const float3 up_eastForce      = getForceForNeighbour(idx, up_eastNeighbour, stiffness, 1.141 * springLength, damping);
+    const float3 up_southEastForce = getForceForNeighbour(idx, up_southEastNeighbour, stiffness, 1.732 * springLength, damping);
+    const float3 up_southForce = getForceForNeighbour(idx, up_southNeighbour, stiffness, 1.141 * springLength, damping);
+    const float3 up_southWestForce = getForceForNeighbour(idx, up_southWestNeighbour, stiffness, 1.732 * springLength, damping);
+    const float3 up_westForce = getForceForNeighbour(idx, up_westNeighbour, stiffness, 1.141 * springLength, damping);
+    const float3 up_northWestForce = getForceForNeighbour(idx, up_northWestNeighbour, stiffness, 1.732 * springLength, damping);
 
     const float3 down_immediateForce = getForceForNeighbour(idx, down_immediateNeighbour, stiffness, springLength, damping);
-    const float3 down_northForce = getForceForNeighbour(idx, down_northNeighbour, stiffness, springLength, damping);
-    const float3 down_northEastForce = getForceForNeighbour(idx, down_northEastNeighbour, stiffness, springLength, damping);
-    const float3 down_eastForce = getForceForNeighbour(idx, down_eastNeighbour, stiffness, springLength, damping);
-    const float3 down_southEastForce = getForceForNeighbour(idx, down_southEastNeighbour, stiffness, springLength, damping);
-    const float3 down_southForce = getForceForNeighbour(idx, down_southNeighbour, stiffness, springLength, damping);
-    const float3 down_southWestForce = getForceForNeighbour(idx, down_southWestNeighbour, stiffness, springLength, damping);
-    const float3 down_westForce = getForceForNeighbour(idx, down_westNeighbour, stiffness, springLength, damping);
-    const float3 down_northWestForce = getForceForNeighbour(idx, down_northWestNeighbour, stiffness, springLength, damping);
+    const float3 down_northForce = getForceForNeighbour(idx, down_northNeighbour, stiffness, 1.141 * springLength, damping);
+    const float3 down_northEastForce = getForceForNeighbour(idx, down_northEastNeighbour, stiffness, 1.732 * springLength, damping);
+    const float3 down_eastForce = getForceForNeighbour(idx, down_eastNeighbour, stiffness, 1.141 * springLength, damping);
+    const float3 down_southEastForce = getForceForNeighbour(idx, down_southEastNeighbour, stiffness, 1.732 * springLength, damping);
+    const float3 down_southForce = getForceForNeighbour(idx, down_southNeighbour, stiffness, 1.141 * springLength, damping);
+    const float3 down_southWestForce = getForceForNeighbour(idx, down_southWestNeighbour, stiffness, 1.732 * springLength, damping);
+    const float3 down_westForce = getForceForNeighbour(idx, down_westNeighbour, stiffness, 1.141 * springLength, damping);
+    const float3 down_northWestForce = getForceForNeighbour(idx, down_northWestNeighbour, stiffness, 1.732 * springLength, damping);
 
-    const float3 northBendForce  = getForceForNeighbour(idx, northBendNeighbour, stiffness, springLength, damping);
-    const float3 eastBendForce   = getForceForNeighbour(idx, eastBendNeighbour, stiffness, springLength, damping);
-    const float3 westBendForce   = getForceForNeighbour(idx, southBendNeighbour, stiffness, springLength, damping);
-    const float3 southBendForce  = getForceForNeighbour(idx, westBendNeighbour, stiffness, springLength, damping);
-    const float3 upBendForce = getForceForNeighbour(idx, upBendNeighbour, stiffness, springLength, damping);
-    const float3 downBendForce = getForceForNeighbour(idx, downBendNeighbour, stiffness, springLength, damping);
+    const float3 northBendForce  = getForceForNeighbour(idx, northBendNeighbour, stiffness, 2.0 * springLength, damping);
+    const float3 eastBendForce   = getForceForNeighbour(idx, eastBendNeighbour, stiffness, 2.0 * springLength, damping);
+    const float3 westBendForce   = getForceForNeighbour(idx, southBendNeighbour, stiffness, 2.0 * springLength, damping);
+    const float3 southBendForce  = getForceForNeighbour(idx, westBendNeighbour, stiffness, 2.0 * springLength, damping);
+    const float3 upBendForce = getForceForNeighbour(idx, upBendNeighbour, stiffness, 2.0 * springLength, damping);
+    const float3 downBendForce = getForceForNeighbour(idx, downBendNeighbour, stiffness, 2.0 * springLength, damping);
 
     const float3 internalForce   = (northForce + eastForce + westForce + southForce +
         northEastForce + northWestForce + southEastForce + southWestForce +
@@ -227,7 +227,7 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
         down_immediateForce + down_northForce + down_eastForce + down_westForce + down_southForce +
         down_northEastForce + down_northWestForce + down_southEastForce + down_southWestForce +
         northBendForce + eastBendForce + westBendForce + southBendForce +
-        upBendForce + downBendForce);
+        upBendForce + downBendForce);//simplify and see which combinations of neighbors' forces cause the grid to go crazy or not
     //Add the external forces from the external forces buffer to the internal neighbour forces.
     const float3 force           = internalForce + externalForcesBuffer[idx].force;
     //m = fa, a = f/m
