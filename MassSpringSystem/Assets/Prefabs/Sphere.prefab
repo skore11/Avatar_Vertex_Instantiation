@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 33357310917755154}
   - component: {fileID: 23828713911133652}
   - component: {fileID: 135857620696351112}
+  - component: {fileID: 114993120754381582}
   m_Layer: 0
   m_Name: Sphere
   m_TagString: MassUnit
@@ -84,6 +85,21 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1919633540176698}
   m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &114993120754381582
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1919633540176698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f2c37b55ddfcb6458ba57d383b8c190, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  meshCollider: {fileID: 0}
+  In: 0
+  concaveHull: 0
+  distance: 100
 --- !u!135 &135857620696351112
 SphereCollider:
   m_ObjectHideFlags: 1

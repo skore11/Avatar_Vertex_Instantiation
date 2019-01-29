@@ -29,8 +29,8 @@ function Start () {
 	}
 }
 
-function FixedUpdate () {
-   /* TestTriangleIntersectionAABC();
+function LateUpdate () {
+    TestTriangleIntersectionAABC();
 	if(createMultipleGrids && includeChildren) {
 		aABCGrids = Voxelization.CreateMultipleGridsWithGameObjectMesh(gameObject, cubeSide, drawMeshInside);
 	} else {
@@ -38,7 +38,7 @@ function FixedUpdate () {
 		aABCGrids = new Array();	
 		thisObjGrid = Voxelization.CreateGridWithGameObjectMesh(gameObject, cubeSide, includeChildren, drawMeshInside);
 		aABCGrids.Push(thisObjGrid);
-	}*/
+	}
  }
 
 function OnDrawGizmos () {
@@ -68,7 +68,7 @@ function TestTriangleIntersectionAABC() {
 	triangleC[1] = new Vector3(-1, -1, -2);
 	triangleC[2] = new Vector3(-1, -1, -2);
 	
-	print("aabc vertices:");
+	//print("aabc vertices:");
 	aABCVertices = aABCGrid.GetAABCCorners(0, 0, 0);
 	for(var i = 0; i < 8; ++i) {
 		print("Vertex " + i + ": " + aABCVertices[i]);

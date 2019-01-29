@@ -29,22 +29,43 @@ using System.Collections.Generic;
 public class MassSpawner : MonoBehaviour
 {
     public GameObject MassPrefab;
-
+   // public GameObject character;
+   // public  GameObject objectSkeleton;
+    
+    //public static Transform[] objectTransform;
+    public static int index =0;
     private float     MassUnitSize;
-    private List<GameObject> Primitives = new List<GameObject>();
+    public List<GameObject> Primitives = new List<GameObject>();
     private Vector3[] positions;
+
+
+
+    //===========================================================================================
 
     //===========================================================================================
     //Overrides
     //===========================================================================================
-    void FixedUpdate()
+
+    /*void Start()
+    {
+        Transform[] objectBones = objectSkeleton.GetComponent<ViewSkeleton>().childNodes;
+        for (int i = 0; i < objectBones.Length; i++)
+        {
+            Debug.Log("Object's bone" + objectBones[i] + "X:" + objectBones[i].transform.position.x + ", Y:" + objectBones[i].transform.position.y + ", Z:" + objectBones[i].transform.position.z);
+        }
+    }*/
+
+
+
+    void Update()//what exactly happens here?
     {
         int numPositions = Primitives.Count;
         for (int i = 0; i < numPositions; ++i)
         {
             Primitives[i].transform.position = TranslateToUnityWorldSpace(positions[i]);
         }
-        }
+        //can use the skinning parameters here
+    }
 
     //===========================================================================================
     // Setter Functions
@@ -65,21 +86,67 @@ public class MassSpawner : MonoBehaviour
 
         positions = p;
         int index = 0;
+        InsideTester insideTester = GetComponent<InsideTester>();
+        insideTester.meshCollider.gameObject.SetActive(true);
         foreach (Vector3 massPosition in positions)
         {
             //translate y to z so we can use Unity's in-built gravity on the y axis.
+
             Vector3 worldPosition = TranslateToUnityWorldSpace (massPosition);
 
+
             GameObject springMassObject = Instantiate<GameObject>(MassPrefab, worldPosition, Quaternion.identity, this.transform);
+            //springMassObject.SetActive(true);//has to be first set to true
+            //springMassObject.GetComponent<CsObject>().enabled = true;
+            
             springMassObject.name = "MassObj" + index + " " + massPosition.ToString();
             springMassObject.transform.localScale = Vector3.one * MassUnitSize;
-            Primitives.Add (springMassObject);
+            Primitives.Add(springMassObject);
+            if (insideTester.IsInside(springMassObject.transform.position))
+            {
+                springMassObject.SetActive(true);
+                Debug.Log(springMassObject.transform.position.x + "," + springMassObject.transform.position.y + "," + springMassObject.transform.position.z);
+            }
+            else
+            {
+                springMassObject.SetActive(false);
+            }
+            //Transform[] objectBones = objectSkeleton.GetComponent<ViewSkeleton>().childNodes;
+            //for (int i = 0; i < objectBones.Length; i++)
+            //{
+            //    if (springMassObject.active)
+            //    {
+            //        if (Vector3.Distance(springMassObject.transform.position, objectBones[i].transform.position) < 0.01f)
+            //        {
+            //            objectBones[i].transform.position = new Vector3(0.0f, 0.0f, 0.0f);
+            //            objectBones[i].transform.position = springMassObject.transform.position;
+            //            Debug.Log("springMassObject.transform.position");
+            //        }
+            //        else
+            //        {
+            //            Debug.Log("nothing close by");
+            //        }
+            //    }
+            //    Debug.Log("Object's bone after transfering " + objectBones[i] + "X:" + objectBones[i].transform.position.x + ", Y:" + objectBones[i].transform.position.y + ", Z:" + objectBones[i].transform.position.z);
+            //}
+
+            /*
+            if (Physics.OverlapSphere(springMassObject.transform.position, MassUnitSize / 2f).Length > 0)
+            {
+            Debug.Log(springMassObject.name + " is inside target mesh " + character.name);
+             springMassObject.SetActive(true);
+            }
+            */
+
+            // ray intersection with mesh of character and hide masses not in side mesh
+
             index++;
         }
-        
+        insideTester.meshCollider.gameObject.SetActive(false);
     }
 
-  
+
+
     //===========================================================================================
     // Position Updating
     //===========================================================================================
@@ -87,7 +154,8 @@ public class MassSpawner : MonoBehaviour
     public void UpdatePositions (Vector3[] p)
     {
         positions = p;//check for interfacing with vertex positions of animations
-        //Debug.Log(p);
+                      //Debug.Log(p);
+    
     }
 
     //===========================================================================================
@@ -96,6 +164,11 @@ public class MassSpawner : MonoBehaviour
 
     private Vector3 TranslateToUnityWorldSpace (Vector3 gridPosition)
     {
-        return new Vector3 (gridPosition.x, gridPosition.z, gridPosition.y);
-    }  
+        return new Vector3(
+            Mathf.Clamp(gridPosition.x, -100f, 100f),
+            Mathf.Clamp(gridPosition.z, -100f, 100f),
+            Mathf.Clamp(gridPosition.y, -100f, 100f));
+    }
+
+
 }

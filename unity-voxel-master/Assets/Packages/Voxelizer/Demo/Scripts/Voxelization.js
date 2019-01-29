@@ -429,7 +429,7 @@ public function FillGridWithGameObjectMeshShell(gameObj : GameObject, storeNorma
 		cubeNormalSum = new short [width, height, depth];
 	}
 	if(debug) {
-		Debug.Log("Start:");
+		/*Debug.Log("Start:");
 		Debug.Log("Time: " + startTime);
 		Debug.Log("		Mesh Description: ");
 		Debug.Log("Name: " + gameObjMesh.name);
@@ -437,7 +437,7 @@ public function FillGridWithGameObjectMeshShell(gameObj : GameObject, storeNorma
 		Debug.Log("Local AABB size: " + gameObjMesh.bounds.size);
 		Debug.Log("		AABCGrid Description:");
 		Debug.Log("Size: " + width + ',' + height + ',' + depth);
-		//Debug.Log("x, y, z " + x + ',' + y + ',' + z);
+		//Debug.Log("x, y, z " + x + ',' + y + ',' + z);*/
 	}
 	
 	// For each triangle, perform SAT intersection check with the AABCs within the triangle AABB.
@@ -452,8 +452,8 @@ public function FillGridWithGameObjectMeshShell(gameObj : GameObject, storeNorma
 		var endX = Mathf.Ceil((Mathf.Max([triangle[0].x, triangle[1].x, triangle[2].x]) - origin.x) / side);
 		var endY = Mathf.Ceil((Mathf.Max([triangle[0].y, triangle[1].y, triangle[2].y]) - origin.y) / side);
 		var endZ = Mathf.Ceil((Mathf.Max([triangle[0].z, triangle[1].z, triangle[2].z]) - origin.z) / side);
-		Debug.Log("Startx, Starty, Startz " + startX + ',' + startY + ',' + startZ);
-		Debug.Log("endx, endy, endz " + endX + ',' + endY + ',' + endZ);
+		//Debug.Log("Startx, Starty, Startz " + startX + ',' + startY + ',' + startZ);
+		//Debug.Log("endx, endy, endz " + endX + ',' + endY + ',' + endZ);
 		if (storeNormalSum) {
 		
 			for (x = startX; x <= endX; ++x) {
@@ -462,7 +462,7 @@ public function FillGridWithGameObjectMeshShell(gameObj : GameObject, storeNorma
 						if (TriangleIntersectAABC(triangle, x, y, z)) {
 							var triangleNormal = GetTriangleNormal(triangle);
 							cubeSet[x, y, z] = true;
-							Debug.Log("x, y, z " + x + ',' + y + ',' + z);
+							//Debug.Log("x, y, z " + x + ',' + y + ',' + z);
 							if (triangleNormal.z < 0 - ignoreNormalRange) {
 								cubeNormalSum[x, y, z]++;
 							} else if (triangleNormal.z > 0 + ignoreNormalRange){

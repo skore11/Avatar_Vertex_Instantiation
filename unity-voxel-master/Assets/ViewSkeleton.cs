@@ -32,13 +32,11 @@ public class ViewSkeleton : MonoBehaviour {
                     Gizmos.color = Color.red;
                     Gizmos.DrawLine(child.position, child.parent.position);
                     float dist = Vector3.Distance(child.position, child.parent.position);
-                    //Debug.Log(child.name);
-                    //Debug.Log(child.position);
-                    //Debug.Log(child.parent.name);
-                    //Debug.Log(child.parent.position);
-                    //Debug.Log(dist);
-                    Matrix4x4 splitMatrix = child.localToWorldMatrix;// I have the local to world matrix of each of my skeletons joints
-                    
+                    Debug.Log(child.name);
+                    Debug.Log(child.position);
+                    Debug.Log(child.parent.name);
+                    Debug.Log(child.parent.position);
+                    Debug.Log(dist);
                     float linepos = 16.0f;
                     for (int s =1; s<=16; s++)
                     {
@@ -47,8 +45,7 @@ public class ViewSkeleton : MonoBehaviour {
                         float percentage = s / linepos;
                         Debug.Log(percentage);
                         Vector3 split = Vector3.Lerp(child.position, child.parent.position, percentage);
-                        
-                        
+                        Debug.Log(split);
                         Gizmos.DrawCube(split, new Vector3(0.01f, 0.01f, 0.01f));
                     }
     

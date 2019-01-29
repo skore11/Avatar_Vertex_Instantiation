@@ -122,9 +122,12 @@ public class CanvasTouchManager : CanvasTouchHandler
         if (Physics.Raycast (ray, out raycastResult))
         {
             GameObject obj = raycastResult.collider.gameObject;
-            if (MassSpringSystem.IsMassUnit (obj.tag))
+            Debug.Log("hit somthing" + obj.name);
+            if (MassSpringSystem3D.IsMassUnit (obj.tag))
             {
-                int index = Int32.Parse(obj.name.Substring(7, obj.name.IndexOf(' ') - 7));
+                int index = Int32.Parse(obj.name.Substring(7, obj.name.IndexOf(' ') - 7));// ask stefan definitely
+                Debug.Log(index);
+               
                 //need to translate back from unity world space so we use z here rather than y
                 GridTouches.Add (new Vector2 (index, SimulatedPressure));
             }

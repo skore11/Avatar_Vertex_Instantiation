@@ -39,6 +39,7 @@ public class InstantiateVert : MonoBehaviour
     Vector3[] normals;
     //public GameObject ObjectToInstantiate;
     public GameObject MassPrefab;
+    public MassSpawner SpawnerAnim;
 
     private float MassUnitSize;
     private ArrayList Primitives = new ArrayList();
@@ -56,7 +57,9 @@ public class InstantiateVert : MonoBehaviour
         print(skin.name);
 
 
-        vertexCount = mesh.vertexCount;
+        vertexCount = mesh.vertexCount;//number of primitives , vertexCount = SpawnerAnim.Primitives.Count;
+
+
 
         vertices = new Vector3[vertexCount];//the vertices that have skin weights that need to be updated every frame (check line 115)
 
