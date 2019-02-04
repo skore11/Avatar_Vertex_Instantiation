@@ -131,9 +131,9 @@ public class MassSpringSystem3D : MonoBehaviour
      *  
      * Note: In addition to the above initialise gridUnitSideZ and numThreadsperGroupZ; both of these vartiables will aid in creating a 3D grid of massspring units
      */
-    private const int gridUnitSideX = 5;
-    private const int gridUnitSideY = 5;
-    private const int gridUnitSideZ = 5; // leave it at 7 for now
+    private const int gridUnitSideX = 2;
+    private const int gridUnitSideY = 2;
+    private const int gridUnitSideZ = 2; // leave it at 7 for now
     private const int numThreadsPerGroupX = 10;
     private const int numThreadsPerGroupY = 10;
     private const int numThreadsPerGroupZ = 10; // leave it at 1 for now
@@ -553,18 +553,21 @@ public class MassSpringSystem3D : MonoBehaviour
         }
         bool foundExternalForces = false;
         // Check Gravity Effects:
-       /* foreach(GameObject mass in Spawner.Primitives)
-        {
-            if (gameObject.GetComponent<Rigidbody>().velocity.x > 0.0f || gameObject.GetComponent<Rigidbody>().velocity.y > 0.0f || gameObject.GetComponent<Rigidbody>().velocity.z > 0.0f)
-            {
-                //Set force here, but equal to what? corresponding to the velocity ?
-                //extForces
-                if (gameObject.GetComponent<Rigidbody>().useGravity == true)
-                {
-                    foundExternalForces = true;
-                }
-            }
-        }*/
+        foreach(GameObject mass in Spawner.Primitives)
+         {
+                 if (mass.GetComponent<Rigidbody>().useGravity == true)
+                 {
+          
+                 int index = int.Parse(mass.name.Substring(7, mass.name.IndexOf(' ') - 7));// ask stefan definitely
+                 Debug.Log(index);
+
+                 //need to translate back from unity world space so we use z here rather than y
+                 UITouchHandler.GridTouches.Add (new Vector2 (index, UITouchHandler.SimulatedPressure));
+                        
+         foundExternalForces = true;
+                 }
+
+         }
         // ask MassSpawner to go through all spawned primitives,
         // there: check if there is a rigidbody, check if that has velocity applied to it
         // if so, set the extforces entry for that rigidbody (use the name thing as in ProjectScreenPositionToMassSpringGrid

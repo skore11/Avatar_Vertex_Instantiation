@@ -121,9 +121,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
      */
 
 	//number of points per side, per thread.
-    const int gX = 5;
-    const int gY = 5;
-    const int gZ = 5;
+    const int gX = 2;
+    const int gY = 2;
+    const int gZ = 2;
     //grid side resolution
     const int sX = gX * thread_group_size_x;
     const int sY = gY * thread_group_size_y;
@@ -247,9 +247,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
 void CSMainPos (uint3 id : SV_DispatchThreadID)
 {
     //number of points per side, per thread.
-    const int gX   = 5;
-    const int gY   = 5;
-    const int gZ   = 5;
+    const int gX   = 2;
+    const int gY   = 2;
+    const int gZ   = 2;
     //grid side resolution
     const int sX = gX * thread_group_size_x;
     const int sY = gY * thread_group_size_y;
