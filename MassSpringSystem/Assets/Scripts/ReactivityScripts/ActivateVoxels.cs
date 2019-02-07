@@ -8,7 +8,7 @@ using UnityEngine;
 //Use this script to define which parts of voxelized model can activate its voxels
 //
 public class ActivateVoxels : MonoBehaviour {
-    public MassSpawner voxels;
+    public  MassSpawner3D voxels;
     public GameObject spawner;
 	// Use this for initialization
 	public void Start () {
@@ -39,6 +39,8 @@ public class ActivateVoxels : MonoBehaviour {
         //calculate force from velocity and apply to mass spring system OR
         //calculate velocity every frame and send it shader via velocity buffer
 
+        //Check bonefollower.cs online
+
     }
 
     public void ActivateonMouse()
@@ -53,5 +55,17 @@ public class ActivateVoxels : MonoBehaviour {
     {
         //Apply Force 
         //Changes in positions/velocity on interaction with environment
+        /* void OnCollisionEnter(Collision collision)
+         {
+             if (collision.relativeVelocity.magnitude > 2)
+                 
+                 int index = int.Parse(mass.name.Substring(7, mass.name.IndexOf(' ') - 7));// ask stefan definitely
+                  Debug.Log(index);
+
+                  //need to translate back from unity world space so we use z here rather than y
+                  UITouchHandler.GridTouches.Add (new Vector2 (index, UITouchHandler.SimulatedPressure));
+
+          foundExternalForces = true;
+         }*/
     }
 }

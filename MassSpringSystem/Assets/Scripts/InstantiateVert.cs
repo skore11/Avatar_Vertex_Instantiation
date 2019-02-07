@@ -39,7 +39,7 @@ public class InstantiateVert : MonoBehaviour
     Vector3[] normals;
     //public GameObject ObjectToInstantiate;
     public GameObject MassPrefab;
-    public MassSpawner SpawnerAnim;
+    //public MassSpawner SpawnerAnim;
 
     private float MassUnitSize;
     private ArrayList Primitives = new ArrayList();
