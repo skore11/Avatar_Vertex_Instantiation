@@ -16,6 +16,8 @@
  * UpdatePositions functions are therefore translated from the Mass Spring system
  * coordinates to Unity world coordinates by swapping Y and Z values. 
  * 
+ * 
+ * 
  * TODO: Apply the ability to instantiate a gameObject (cubes or spheres) to the grid on mouse push down. 
  * The instantiated object should be connected to the grid with the same mass-spring properties. 
  * Also the ability to change the weight or mass of the cubes by color.
@@ -29,18 +31,15 @@ using System.Collections.Generic;
 public class MassSpawner3D : MonoBehaviour
 {
     public GameObject MassPrefab;
-    // public GameObject character;
-    // public  GameObject objectSkeleton;
 
-    //public static Transform[] objectTransform;
     public static int index =0;
     private float     MassUnitSize;
-    public List<GameObject> Primitives = new List<GameObject>();
+    public Dictionary<int, GameObject> Primitives = new Dictionary<int, GameObject>();
     private Vector3[] positions;
+    
 
     public CanvasTouchManager UITouchHandler;
 
-    public bool foundGravityForces = false;
     //===========================================================================================
 
     //===========================================================================================
@@ -56,12 +55,21 @@ public class MassSpawner3D : MonoBehaviour
 
     void FixedUpdate()
     {
-        int numPositions = Primitives.Count;
-        for (int i = 0; i < numPositions; ++i)
+        foreach (var indexedPrimitive in Primitives)
         {
-            Primitives[i].transform.position = TranslateToUnityWorldSpace(positions[i]);
+            Vector3 newPosition = TranslateToUnityWorldSpace(positions[indexedPrimitive.Key]);
+            GameObject primi = indexedPrimitive.Value;
+            Rigidbody rb = primi.GetComponent<Rigidbody>();
+            if (rb)
+            {
+                rb.position = newPosition;
+            }
+            else
+            {
+                primi.transform.position = newPosition;
+            }
         }
-        //can use the skinning parameters here
+       // Debug.Log(MassPrefab.GetComponent<Rigidbody>().velocity);
     }
 
     //===========================================================================================
@@ -75,7 +83,7 @@ public class MassSpawner3D : MonoBehaviour
 
     public void SpawnPrimitives(Vector3[] p)
     {
-        foreach (GameObject obj in Primitives)
+        foreach (GameObject obj in Primitives.Values)
         {
             Destroy(obj.gameObject);
         }
@@ -83,39 +91,25 @@ public class MassSpawner3D : MonoBehaviour
 
         positions = p;
         int index = 0;
+        
         InsideTester insideTester = GetComponent<InsideTester>();
         insideTester.meshCollider.gameObject.SetActive(true);
+        
         foreach (Vector3 massPosition in positions)
         {
             //translate y to z so we can use Unity's in-built gravity on the y axis.
 
             Vector3 worldPosition = TranslateToUnityWorldSpace (massPosition);
-
-
-            GameObject springMassObject = Instantiate<GameObject>(MassPrefab, worldPosition, Quaternion.identity, this.transform);
-            //springMassObject.SetActive(true);//has to be first set to true
-            //springMassObject.GetComponent<CsObject>().enabled = true;
-
-            springMassObject.name = "MassObj" + index + " " + massPosition.ToString();
-            springMassObject.transform.localScale = Vector3.one * MassUnitSize;
-            Primitives.Add(springMassObject);
-            if (insideTester.IsInside(springMassObject.transform.position))
+            //Check to see if each mass's world position is within the convex hull of character's mesh collider
+            //If so activate gameObject Mass
+            if (insideTester.IsInside(worldPosition))
             {
+                GameObject springMassObject = Instantiate<GameObject>(MassPrefab, worldPosition, Quaternion.identity, this.transform);
+                springMassObject.name = "MassObj" + index + " " + massPosition.ToString();
+                springMassObject.transform.localScale = Vector3.one * MassUnitSize;
+                Primitives[index] = springMassObject;
                 springMassObject.SetActive(true);
-                //Check to optimize further
-                if (springMassObject.GetComponent<Rigidbody>().useGravity == true)
-                {
-                    int i = int.Parse(springMassObject.name.Substring(7, springMassObject.name.IndexOf(' ') - 7));//avoid parsing string
-                    UITouchHandler.GridTouches.Add(new Vector2(i, UITouchHandler.SimulatedPressure));//Might have to initialize the vector 2 before hand, assign using "=="
-                    foundGravityForces = true;
-                    // Debug.Log(springMassObject.transform.position.x + "," + springMassObject.transform.position.y + "," + springMassObject.transform.position.z);
-                }
             }
-            else
-            {
-                springMassObject.SetActive(false);
-            }
-            
             index++;
         }
         insideTester.meshCollider.gameObject.SetActive(false);
@@ -124,26 +118,25 @@ public class MassSpawner3D : MonoBehaviour
 
 
     //===========================================================================================
-    // Position Updating
+    // Position Updating in Mass Spring System
     //===========================================================================================
 
     public void UpdatePositions(Vector3[] p)
     {
         positions = p;
-                      //Debug.Log(p);
-
     }
 
     //===========================================================================================
-    // Helper Functions
+    // Helper Functions during spawning and updating positions in world space
+    // As of now it is clamped to a certain bound in 3 axes
     //===========================================================================================
 
     private Vector3 TranslateToUnityWorldSpace(Vector3 gridPosition)
     {
         return new Vector3(
-            Mathf.Clamp(gridPosition.x, -100f, 100f),
-            Mathf.Clamp(gridPosition.z, -100f, 100f),
-            Mathf.Clamp(gridPosition.y, -100f, 100f));
+            Mathf.Clamp(gridPosition.x, -20f, 20f),
+            Mathf.Clamp(gridPosition.z, -20f, 20f),
+            Mathf.Clamp(gridPosition.y, -20f, 20f));
     }
 
 

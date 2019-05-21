@@ -1,10 +1,10 @@
 ﻿#pragma kernel CSMainPos
 #pragma kernel CSMainVel
 
-#define thread_group_size_x 4
-#define thread_group_size_y 4
+#define thread_group_size_x 10
+#define thread_group_size_y 10
 // need the following for 3D, but value above 1 might not be allowed before shader model / target 5.0: --strank
-#define thread_group_size_z 4
+#define thread_group_size_z 10
 
 //================================================================================================
 // Summary
@@ -121,9 +121,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
      */
 
 	//number of points per side, per thread.
-    const int gX = 7;
-    const int gY = 7;
-    const int gZ = 7;
+    const int gX = 2;
+    const int gY = 2;
+    const int gZ = 2;
     //grid side resolution
     const int sX = gX * thread_group_size_x;
     const int sY = gY * thread_group_size_y;
@@ -247,9 +247,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
 void CSMainPos (uint3 id : SV_DispatchThreadID)
 {
     //number of points per side, per thread.
-    const int gX   = 7;
-    const int gY   = 7;
-    const int gZ   = 7;
+    const int gX   = 2;
+    const int gY   = 2;
+    const int gZ   = 2;
     //grid side resolution
     const int sX = gX * thread_group_size_x;
     const int sY = gY * thread_group_size_y;

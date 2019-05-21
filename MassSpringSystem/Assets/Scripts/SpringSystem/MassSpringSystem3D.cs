@@ -6,6 +6,8 @@ using System.IO;
 //===========================================================================================
 // Simple class that holds various property names and attributes for the 
 // MassSpringSystem.compute shader.
+//
+// Is used to implement physical constraints on each particle of voxelized ragdoll
 //===========================================================================================
 
 public static class SpringComputeShaderProperties3D
@@ -37,7 +39,7 @@ public static class MassSpringRenderShaderProperties3D
 // Summary
 //===========================================================================================
 /**
- * This class is used to periodically run position and velocity buffers through compute
+ * This class is used to periodically run position and velocity buffers for each of the voxels through compute
  * shader kernels that update them according to a mass spring model. It also provides access
  * to properties of the model that can be tweaked from the editor. This class is used to 
  * update these property values in the compute shader as they are changed externally.
@@ -54,6 +56,9 @@ public static class MassSpringRenderShaderProperties3D
  * This class can also be used to translate touch and mouse input (from the UITouchHandler) 
  * into forces that are applied to the mass spring system (implemented by the 
  * MassSpringComputeShader). 
+ * 
+ * Various other forces can be defined through the externalforcesBuffer that can allow 
+ * for reactive deformations in the discretized topology
  */
 
 public class MassSpringSystem3D : MonoBehaviour
@@ -94,7 +99,7 @@ public class MassSpringSystem3D : MonoBehaviour
     /** The controller of the game object spawner object.
      */
     public MassSpawner3D Spawner;
-    //public InstantiateVert VertSpawner;
+   
 
     /** The controller of the touch and mouse input handler object.
      */
@@ -112,7 +117,7 @@ public class MassSpringSystem3D : MonoBehaviour
     //private ComputeBuffer debugBuffer;
     private ComputeBuffer propertiesBuffer;
     // We fill a buffer of grid neigbour positions (the grid needs to be defined as the bounds of the animated model) and send it to the compute buffer on intialisation, such that 
-    // we have access to neughbouring positions in our compute kernels. The neighbours buffer is a buffer of Vector2
+    // we have access to neighbouring positions in our compute kernels. The neighbours buffer is a buffer of Vector2
     // elements, where the x of each element is the neighbour position and the y is whether that position exists within
     // the bounds of the grid.
     private ComputeBuffer neighboursBuffer;
@@ -124,20 +129,20 @@ public class MassSpringSystem3D : MonoBehaviour
     private const int numNeighbours = 32; // 12 for the 2D grid case, see compute shader.
 
     /** Our compute shader runs the same kernels in parallel on mutliple blocks of our
-     *  mass spring grid. These blocks are of dimensions gridUnitSideX by gridUnitSideY,
+     *  mass spring grid. These blocks are of dimensions gridUnitSideX by gridUnitSideY by gridUnitSideZ,
      *  and there are numThreadsPerGroupX blocks along the x dimension of our grid and
-     *  numThreadsPerGroupY along the Y dimension.
+     *  numThreadsPerGroupY along the Y dimension as well as the numThreadsGroupZ along the Z dimension.
      *  
-     *  These values MUST be identical to the gX and gY values in the MassSpringCompute compute shader.
+     *  These values MUST be identical to the gX, gY and gZ values in the MassSpringCompute compute shader.
      *  
-     * Note: In addition to the above initialise gridUnitSideZ and numThreadsperGroupZ; both of these vartiables will aid in creating a 3D grid of massspring units
+     *  Change resolution of 3D grid using these values
      */
-    private const int gridUnitSideX = 7;
-    private const int gridUnitSideY = 7;
-    private const int gridUnitSideZ = 7; // leave it at 7 for now
-    private const int numThreadsPerGroupX = 4;
-    private const int numThreadsPerGroupY = 4;
-    private const int numThreadsPerGroupZ = 4; // leave it at 1 for now
+    private const int gridUnitSideX = 2;
+    private const int gridUnitSideY = 2;
+    private const int gridUnitSideZ = 2; // leave it at 7 for now
+    private const int numThreadsPerGroupX = 10;
+    private const int numThreadsPerGroupY = 10;
+    private const int numThreadsPerGroupZ = 10; // leave it at 1 for now
 
     /** The resolution of our entire grid, according to the resolution and layout of the individual
      *  blocks processed in parallel by the compute shader. Include 3rd dimenion Z by iniitalising:
@@ -162,14 +167,19 @@ public class MassSpringSystem3D : MonoBehaviour
     private Material RenderMaterial;
 
     //Check for gravity
-    bool foundGravityForces = false;
+    public bool foundGravityForces = false;
+
+
+    //Check for skeleton
+    public  GameObject objectSkeleton;
+    private Transform[] skeletonJoints;
 
     void Start()
     {
-        //Application.targetFrameRate = 120;
-        // TODO for later: think again, about how to use the mesh data for initialasing.
+        //Use the bone transforms from viewskeleton to transfer control to appropriate masses and 
+        //run active ragdoll
+        skeletonJoints = objectSkeleton.GetComponent<ViewSkeleton>().childNodes;
         Initialise();
-        //Debug.Log(GridResX); Debug.Log(GridResY);
     }
 
     void FixedUpdate()
@@ -211,8 +221,10 @@ public class MassSpringSystem3D : MonoBehaviour
     //===========================================================================================
 
     /** Checks if an object is recognised as a spring mass model game object. 
+     * Additionally there is bool to check if the mass unit is also a bone transferred from viewskeleton function
      */
     public static bool IsMassUnit(string objectTag) { return objectTag == "MassUnit"; }
+    public static bool IsBoneMassUnit(string objectTag) { return objectTag == "MassUnit + BoneUnit"; }
 
     /** Get the values of the mass positions from the compute buffer.
      */
@@ -221,7 +233,6 @@ public class MassSpringSystem3D : MonoBehaviour
         Vector3[] positions = new Vector3[VertCount];
         positionBuffer.GetData(positions);
         return positions;
-        // Debug.Log(positions);
     }
 
     /** Helper functions to get grid dimension properties in the world space.
@@ -247,6 +258,13 @@ public class MassSpringSystem3D : MonoBehaviour
     /** Initialise all of the compute buffers that will be used to update and read from the compute shader.
      *  Fill all of these buffers with data in order to construct a resting spring mass grid of the correct dimensions.
      *  Initialise the position and velocity kernel values using their name values from the SpringComputeShaderProperties static class.
+     *  
+     *  Typically VertCount is the total number of voxels initialised by compute shader in the regualr grid
+     *  After the convex hull tester only the voxels inside the mesh collider of the character are maintained 
+     *  in the mass list
+     *  
+     *  position and velocity need to read Vector3 data so the memory allocated is 4 bytes per axes i.e. 12 bytes in total for each position and velocity
+     *  
      */
     public void CreateBuffers()
     {
@@ -254,7 +272,7 @@ public class MassSpringSystem3D : MonoBehaviour
         velocityBuffer = new ComputeBuffer(VertCount, sizeof(float) * 3);
         externalForcesBuffer = new ComputeBuffer(VertCount, sizeof(float) * 3);
         //debugBuffer = new ComputeBuffer(VertCount, sizeof(float) * 3);
-        neighboursBuffer = new ComputeBuffer(VertCount, sizeof(float) * numNeighbours * 2); // 2D: 24 = 12 float pairs; 3D: 64 = 32 float pairs (index, and is-it-inside-bounds flag)
+        neighboursBuffer = new ComputeBuffer(VertCount, sizeof(float) * numNeighbours * 2); 
         propertiesBuffer = new ComputeBuffer(SpringComputeShaderProperties3D.NumProperties, sizeof(float));
         deltaTimeBuffer = new ComputeBuffer(1, sizeof(float));
 
@@ -265,7 +283,7 @@ public class MassSpringSystem3D : MonoBehaviour
     }
 
     /** Fills all of the compute buffers with starting data to construct a resting spring mass grid of the correct dimensions
-     *  according to GridResX and GridResY. For each vertex position we also calculate the positions of each of the neighbouring 
+     *  according to GridResX, GridResY and GridResZ. For each vertex position we also calculate the positions of each of the neighbouring 
      *  vertices so that we can send this to the compute shader.
      */
     public void ResetBuffers()
@@ -276,7 +294,7 @@ public class MassSpringSystem3D : MonoBehaviour
         Vector2[] neighbours = new Vector2[VertCount * numNeighbours];
         int neighboursArrayIndex = 0;
         int vertex = 0;
-        // calculating 3D coordinates: innermost loop is x, then y, then z. this order is expected by shader!
+        // calculating 3D coordinates: innermost loop is x, then y, then z. this order that is expected by the compute shader!
         for (int k = (int)Spawner.transform.position.z; k < GridResZ + Spawner.transform.position.z; k++)
         {
             float z = (((k ) - GridResZ / 2.0f) / GridResZ) * GetWorldGridSideLengthZ();
@@ -302,7 +320,7 @@ public class MassSpringSystem3D : MonoBehaviour
             }
         }
 
-        positionBuffer.SetData(positions);// setting the position buffer that is sent to the compute shader wit the positions of the vertices count
+        positionBuffer.SetData(positions);// setting the position buffer that is sent to the compute shader with the positions of the vertices count
         velocityBuffer.SetData(velocities);
         //debugBuffer.SetData(positions);
         externalForcesBuffer.SetData(extForces);
@@ -321,7 +339,7 @@ public class MassSpringSystem3D : MonoBehaviour
             propertiesBuffer.Release();
         if (deltaTimeBuffer != null)
             deltaTimeBuffer.Release();
-        if (externalForcesBuffer != null)// what is happening here?
+        if (externalForcesBuffer != null)
             externalForcesBuffer.Release();
         if (neighboursBuffer != null)
             neighboursBuffer.Release();
@@ -343,8 +361,6 @@ public class MassSpringSystem3D : MonoBehaviour
      */
     public void Initialise()
     {
-    
-
         VertCount = GridResX * GridResY * GridResZ;
         CreateMaterialFromRenderShader();
         CreateBuffers();// creates all the buffers for positions, velocity, neighbors ,forces  also finds both kernels Poskernel and Velkernel
@@ -352,8 +368,7 @@ public class MassSpringSystem3D : MonoBehaviour
         Vector3[] positions = new Vector3[VertCount];// VertCount for 3D grid => VertCount = GridResX * GridResY * GridResZ; 
         positionBuffer.GetData(positions);//Read values from positionbuffer into the positions array
         Spawner.SetMassUnitSize(SpringLength);
-        Spawner.SpawnPrimitives(positions);// called in mass spawner.cs
-
+        Spawner.SpawnPrimitives(positions);// called from mass spawner.cs
     }
 
     //===========================================================================================
@@ -363,66 +378,56 @@ public class MassSpringSystem3D : MonoBehaviour
     /** Fill and return an array of vertex positions that are the direct neighbouring positions of position
      *  'index' in the mass spring grid.
      *  
-     *  Neighbours are listed in 'clockwise' order:
-     *  north, north-east, east, south-east, south, south-west, west, north-west
+     *  Neighbours are listed in 'clockwise' order for immediate neighbours in the mass voxel's 2D plane:
+     *  north, north-east, east, south-east, south, south-west, west, north-west,
+     *  similarily the same ordered is performed for neighbours in the above and below plane as well
      *  
      *  This function does NOT check the index bounds. 
      */
     public int[] GetNeighbours(int index)
     {
-        //n, ne, e, se, s, sw, w, nw; => TODO : also has to include neighbors in a 3D grid 
-        //int[] neighbours = new int[9] {index + GridResX, index + GridResX + 1, index + 1, index - GridResX + 1,
-        //                             index - GridResX, index - GridResX - 1, index - 1, index + GridResX - 1, index + GridResY};
-        // TODO: this should have numNeighbours elements (=32 for 3D), see compute shader.
-        // important that the ordering is exactly the same as used in the compute shader,
-        // for example: the neighbors as above, then the up-center and then other up- neighbours clockwise, then down-center and the other down- neighbours clockwise --strank
-        // int[] neighbours = new int[14] {index + GridResX, index + GridResX + 1, index + 1, index - GridResX + 1,
-        //                              index - GridResX, index - GridResX - 1, index - 1, index + GridResX - 1, index + GridResY, index + GridResY + 1, index - GridResY + 1,
-        //                            index - GridResY, index - GridResY - 1, index + GridResY - 1 };
-        //change to 26 neighbors; check notes; up (9 neighbors) and below (9 neighbors)
         int[] neighbours = new int[26] {index + GridResX, index + GridResX + 1, index + 1, index - GridResX + 1,
                                        index - GridResX, index - GridResX - 1, index - 1, index + GridResX - 1,
                                        index + (GridResX * GridResY), index + (GridResX * GridResY) + GridResX, index + (GridResX * GridResY) + GridResX +1, index + (GridResX * GridResY) + 1 /*GridResY*/,
                                        index + (GridResX * GridResY) - GridResX +1, index + (GridResX * GridResY) - GridResX, index + (GridResX * GridResY) - GridResX -1, index + (GridResX * GridResY) - 1/*GridResY*/, index + (GridResX * GridResY) + GridResX -1,
         index - (GridResX * GridResY), index - (GridResX * GridResY) + GridResX, index - (GridResX * GridResY) + GridResX + 1, index - (GridResX * GridResY) + 1 /*GridResY*/,
                                        index - (GridResX * GridResY) - GridResX + 1, index - (GridResX * GridResY) - GridResX, index - (GridResX * GridResY) - GridResX - 1, index - (GridResX * GridResY) - 1/*GridResY*/, index - (GridResX * GridResY) + GridResX - 1};
-        //Debug.Log(GridResX);Debug.Log( GridResY);
-        //Debug.Log(index + GridResX);//ask stefan about the GridResX; as of now it is equal to 60
         return neighbours;
     }
+    // List all possible neighbors in the each of the planes that are surrounding a particular mass voxel
+    // 32 neighbors in total who need to be parsed to the compute shader as well
 
-    List<int> eastIndices = new List<int> {1,2,3,10,11,12,19,20,21,27};
-    List<int> westIndices = new List<int> {5,6,7,14,15,16,23,24,25,29};
+    List<int> eastIndices  = new List<int> {1,2,3,10,11,12,19,20,21,27};
+    List<int> westIndices  = new List<int> {5,6,7,14,15,16,23,24,25,29};
     List<int> northIndices = new List<int> {0,1,7,9,10,16,18,19,25,26};
     List<int> southIndices = new List<int> {3,4,5,12,13,14,21,22,23,28};
-    List<int> upIndices = new List<int> {8,9,10,11,12,13,14,15,16,30};
-    List<int> downIndices = new List<int> {17,18,19,20,21,22,23,24,25,31};
+    List<int> upIndices    = new List<int> {8,9,10,11,12,13,14,15,16,30};
+    List<int> downIndices  = new List<int> {17,18,19,20,21,22,23,24,25,31};
 
     /** Fill and return an array of Vector2 where x = neighbour position and y = neighbour exists in grid, 
      *  including both direct neighbour positions and "bend" positions.
-     *  Bend positions are 2 grid spaces away on both x and y and z axes, and implement
+     *  Bend positions are 2 grid spaces away on both x, y and z axes, and implement
      *  resistance to bending in the mass spring grid.
      *  
-     *  Neighbours are listed in 'clockwise' order of direct neighbours followed by clockwise bend neighbour positions:
+     *  Neighbours are listed in 'clockwise' order (in 2D) of direct neighbours followed by clockwise bend neighbour positions:
      *  north, north-east, east, south-east, south, south-west, west, north-west, north-bend, east-bend, south-bend, west-bend. 
+     *  the same order needs to be followed while calculating for neighbors in 3D as well.
      */
     public Vector2[] GetNeighbourIndexFlagPairs(int index, int xLoopIndex, int yLoopIndex, int zLoopIndex)
     {
-        //TODO: needs to use the same numNeighbours (32) neighbours as the compute shader in the same order! --strank
+        //TODO: needs to use the same numNeighbours (32) neighbours as the compute shader in the same order
 
         //n, ne, e, se, s, sw, w, nw, nb, eb, sb, wb
         int[] neighburIndexes = GetNeighbours(index);
-        //Debug.Log(index + "grid res X" + GridResX + "grid res Y" + GridResY + "neighbur indices" + neighburIndexes[5]);// neighburindex[9] +(gridresX * gridresY)
         int[] bendIndexes = { neighburIndexes[0] + GridResX, neighburIndexes[2] + 1, neighburIndexes[4] - GridResX, neighburIndexes[6] - 1,
                               neighburIndexes[8] + (GridResX * GridResY), neighburIndexes[17] - (GridResX * GridResY)};//3D 
-        int[] neighbours = new int[32];//check this value
-        //Debug.Log(bendIndexes[0] + "2" + bendIndexes[1] + "3" + bendIndexes[2] + "4" + bendIndexes[3]);
-        //Debug.Log(neighbours[1]);
+        int[] neighbours = new int[32];
 
         neighburIndexes.CopyTo(neighbours, 0);// copies everything from array to another, starting from the given index (here it is from 0th index)
-        bendIndexes.CopyTo(neighbours, 26);//check
+        bendIndexes.CopyTo(neighbours, 26);
 
         /** Depending on the specific neighbour position, we need to check varying bounds conditions.
+         *  check within loop indicies if neighbor exists within the bounds
          */
         Vector2[] neighbourFlagPairs = new Vector2[32];
         for (int i = 0; i < 32; ++i)
@@ -495,12 +500,14 @@ public class MassSpringSystem3D : MonoBehaviour
 
     /** Applies a given pressure value to a given mass index. This pressure is added to the 
      *  external forces acting on the grid of masses.
+     *  
+     *  Might have to change this for gravity because only a force of Maxtouch is always applied
      */
     public void ApplyPressureToMass(int index, float pressure, ref Vector3[] extForces)
     {
         if (index >= 0 && index < extForces.Length)
         {
-            extForces[index] = new Vector3(0.0f, 0.0f, MaxTouchForce * pressure * -1.0f);
+            extForces[index] = new Vector3(0.0f, 0.0f, MaxTouchForce * pressure * -1.0f);//make it +1.0f to make it a pull
         }
     }
 
@@ -512,7 +519,6 @@ public class MassSpringSystem3D : MonoBehaviour
         foreach (int i in neighbours)
         {
             ApplyPressureToMass(i, pressure * 0.5f, ref extForces);
-            //Debug.Log("Pressure to Mass" + i);
         }
     }
 
@@ -547,43 +553,88 @@ public class MassSpringSystem3D : MonoBehaviour
         {
             extForces[i] = new Vector3(0.0f, 0.0f, 0.0f);
         }
+        Vector3[] gravityForces = new Vector3[VertCount];
+        for (int i = 0; i < VertCount; i++)
+        {
+            gravityForces[i] = new Vector3(0.0f, 0.0f, 0.0f);
+        }
         bool foundExternalForces = false;
+       
         // Check Gravity Effects:
-        //foreach(GameObject mass in Spawner.Primitives)
-        // {
-        //         if (mass.GetComponent<Rigidbody>().useGravity == true)
-        //         {
-          
-        //         int index = int.Parse(mass.name.Substring(7, mass.name.IndexOf(' ') - 7));
-        //         //Debug.Log(index);
-        //         UITouchHandler.GridTouches.Add (new Vector2 (index, UITouchHandler.SimulatedPressure));
-        //         foundExternalForces = true;
-        //         }
+        // ask MassSpawner to go through all spawned primitives:
+        int index = 0;
+        foreach (GameObject mass in Spawner.Primitives.Values)
+        {
+            //    // there: check if there is a rigidbody, check if that has velocity applied to it
+            //    // if so, set the extforces entry for that rigidbody (use the name thing as in ProjectScreenPositionToMassSpringGrid
+            //    // to get the index)
+            //for (int i = 0; i < skeletonJoints.Length; i++)
+            //{
+            //   float dist = Vector3.Distance(skeletonJoints[i].position,mass.transform.position);
+            //    if (dist < 0.1f)
+            //   {
+            //        mass.AddComponent<Rigidbody>().useGravity = true;
+            ////        //mass.gameObject.tag = "MassUnit + BoneUnit";
+            //        Vector3 velocity = mass.GetComponent<Rigidbody>().velocity;
+            //        gravityForces[index].z = velocity.y;
+            //        //        //        //Debug.Log("index" + index + " " + velocity.x);
+            //        Debug.Log(mass.name);
+            //        index++;
 
-        // }
-        // ask MassSpawner to go through all spawned primitives,
-        // there: check if there is a rigidbody, check if that has velocity applied to it
-        // if so, set the extforces entry for that rigidbody (use the name thing as in ProjectScreenPositionToMassSpringGrid
-        // to get the index)
-
-        // if any gravity effects were found (bigger than 0 or a threshold), set foundExternalForce true
-
-        // Check Touch Effects:
-        if (UITouchHandler.GridTouches.Count > 0)
+            //        foundGravityForces = true;
+            //    }
+            //    else
+            //    {
+            //        foundGravityForces = false;
+            //    }
+            //}
+            if (mass.GetComponent<Rigidbody>().useGravity == true)
+            {
+            //    //        // TODO: actually check if the rigidbody has any velocity on it:
+            //    //        // only then add a corresponding external force
+            //    //        //int index = int.Parse(mass.name.Substring(7, mass.name.IndexOf(' ') - 7));
+            //    //        //Debug.Log(index);
+            //    //        //UITouchHandler.GridTouches.Add(new Vector2(index, UITouchHandler.SimulatedPressure));
+            //    //        // if any gravity effects were found (bigger than 0 or a threshold), set foundExternalForce true
+               Vector3 velocity = mass.GetComponent<Rigidbody>().velocity;
+            //    //        //Debug.Log("index" + index + "" + velocity);
+            //    //        //extForces[index] = new Vector3 (0.0f, 0.0f, -9.8f);//flipping 'y' and 'z' axes
+            //    //        //gravity velocity of initial sphere applied to all rigidbodies in grid
+            //    //        //extForces[index].x = velocity.x;
+            //    //        //extForces[index].y = velocity.z;
+                //        //extForces[index].z = velocity.y;
+                        gravityForces[index].z = velocity.y;
+                //Debug.Log("index" + index + " " + velocity.x + " " + velocity.y + " " + velocity.z);
+                // Debug.Log(velocity.y / Time.deltaTime);
+                //Debug.Log(Time.deltaTime);
+                index++;
+              
+                foundGravityForces = true;
+                    }
+                }
+                
+                // Check Touch Effects:
+                if (UITouchHandler.GridTouches.Count > 0)
         {
             foreach (Vector2 gridTouch in UITouchHandler.GridTouches)
             {
-                UITouchInputUpdated((int)gridTouch.x, gridTouch.y, ref extForces);
-                //Debug.Log(gridTouch.y);
-                //Debug.Log("external forces:" + extForces);
+                UITouchInputUpdated((int)gridTouch.x, gridTouch.y,ref extForces);
             }
             foundExternalForces = true;
             UITouchHandler.GridTouches.Clear();
         }
-        if (foundExternalForces || Spawner.foundGravityForces)
+        if (foundGravityForces)
         {
-            externalForcesBuffer.SetData(extForces);
+            externalForcesBuffer.SetData(gravityForces);
         }
+
+        if (foundExternalForces)
+        {
+            //Debug.Log("External forces" + "index:" + " " + index + " " + "x:" + extForces[index].x + " " + "y:" + extForces[index].y + " " + "z:" + extForces[index].z);
+            externalForcesBuffer.SetData(extForces);
+
+        }
+        
     }
 
     //===========================================================================================
@@ -640,19 +691,10 @@ public class MassSpringSystem3D : MonoBehaviour
 
         Vector3[] positions = new Vector3[VertCount];
         positionBuffer.GetData(positions);// get data from the position buffer and pass it to the positions' array variable
-/*
-        List<string> lines = new List<string>();//debug info on positions
-        foreach (Vector3 pos in positions)
-        {
-            lines.Add("x:" + pos.x + "y:" + pos.y + "z:" + pos.z);
-        }
-        System.IO.File.WriteAllLines(Path.Combine(
-            Path.GetTempPath(), count + "position.txt"), lines.ToArray());
-*/
+
         if (Spawner != null)
             Spawner.UpdatePositions(positions);
-        // if (VertSpawner != null)
-        // VertSpawner.UpdatePositions(positions);
+
     }
 
     void Dispatch()
@@ -667,13 +709,6 @@ public class MassSpringSystem3D : MonoBehaviour
         SetPositionBuffers();
 
         MassSpringComputeShader.Dispatch(PosKernel, gridUnitSideX, gridUnitSideY, gridUnitSideZ);
-
-        /*MassSpringComputeShader.Dispatch(VelKernel, 3, 3, 3);
-
-        SetPositionBuffers();
-      
-        MassSpringComputeShader.Dispatch(PosKernel,  3, 3, 3);
-        */
 
     }
 
