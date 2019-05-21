@@ -121,9 +121,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
      */
 
 	//number of points per side, per thread.
-    const int gX = 2;
-    const int gY = 2;
-    const int gZ = 2;
+    const int gX =3;
+    const int gY =3;
+    const int gZ =3;
     //grid side resolution
     const int sX = gX * thread_group_size_x;
     const int sY = gY * thread_group_size_y;
@@ -182,9 +182,11 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     /** Our grid is structured to have rigid, non-moving edges. 
      */
     //const float notEdge = (float) (northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y);
-    //const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y);
+    const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y);
     //const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
-    const float notEdge = 1.0f;
+    //const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
+    //const float notEdge = 1.0f;
+    //Keep notEdge ? - show stefan
 
     const float3 northForce      = getForceForNeighbour (idx, northNeighbour,     stiffness, springLength, damping);
     const float3 northEastForce  = getForceForNeighbour (idx, northEastNeighbour, stiffness, sqrt(2.0f)/*1.414 */* springLength, damping); //TODO: find available functions in compute shaders to actually use the real root of 2, etc, or a better approximation
@@ -231,6 +233,7 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
         northBendForce + eastBendForce + westBendForce + southBendForce +
         upBendForce + downBendForce);//simplify and see which combinations of neighbors' forces cause the grid to go crazy or not
     //Add the external forces from the external forces buffer to the internal neighbour forces.
+    
     const float3 force           = internalForce + externalForcesBuffer[idx].force;
     //m = fa, a = f/m
     const float3 acceleration    = force / (mass == 0.0f ? 1.0f : mass);
@@ -238,7 +241,11 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     //notEdge acts like a boolean flag here, zeroing out any vertices that exist along the edges. Remove notedge to allow for non-rigid edges
     const float3 vDelta = notEdge * acceleration * delta;
     float3 newVel = velBuffer[idx].vel + vDelta;
+    //newVel = newVel.x < 0.1f ? float3 (0.0f, newVel.y, newVel.z) : newVel;
+    //newVel = newVel.y < 0.1f ? float3 (newVel.x, 0.0f, newVel.z) : newVel;
+    //newVel = newVel.z < 0.1f ? float3 (newVel.x, newVel.y, 0.0f) : newVel;
     velBuffer[idx].vel = newVel;
+    
 }
 
 //[numthreads (thread_group_size_x, thread_group_size_y, 1)]
@@ -247,9 +254,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
 void CSMainPos (uint3 id : SV_DispatchThreadID)
 {
     //number of points per side, per thread.
-    const int gX   = 2;
-    const int gY   = 2;
-    const int gZ   = 2;
+    const int gX   = 3;
+    const int gY   = 3;
+    const int gZ   = 3;
     //grid side resolution
     const int sX = gX * thread_group_size_x;
     const int sY = gY * thread_group_size_y;

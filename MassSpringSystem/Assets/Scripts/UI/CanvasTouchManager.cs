@@ -62,6 +62,8 @@ public class CanvasTouchManager : CanvasTouchHandler
      */
     private RaycastHit raycastResult;
 
+    public int voxelTouched = -1;
+
 	void FixedUpdate ()
     {
         if (Input.touchCount > 0)
@@ -119,13 +121,14 @@ public class CanvasTouchManager : CanvasTouchHandler
     public void ProjectScreenPositionToMassSpringGrid (Vector2 screenPosition)
     {
         Ray ray = Camera.main.ScreenPointToRay (screenPosition);
-        if (Physics.Raycast (ray, out raycastResult))
+        if (Physics.Raycast (ray, out raycastResult, 500f, LayerMask.GetMask("Layer2")))
         {
             GameObject obj = raycastResult.collider.gameObject;
             //Debug.Log("hit somthing" + obj.name);
             if (MassSpringSystem3D.IsMassUnit (obj.tag)/*||MassSpringSystem3D.IsBoneMassUnit(obj.tag)*/)
             {
                 int index = Int32.Parse(obj.name.Substring(7, obj.name.IndexOf(' ') - 7));// ask stefan definitely
+                voxelTouched = index;
                 //Debug.Log(index);
                
                 //need to translate back from unity world space so we use z here rather than y

@@ -42,7 +42,7 @@ public class ViewSkeleton : MonoBehaviour {
                 {
                     Gizmos.color = Color.red;
                     Gizmos.DrawLine(child.position, child.parent.position);
-                    float dist = Vector3.Distance(child.position, child.parent.position);
+                    //float dist = Vector3.Distance(child.position, child.parent.position);
                     float linepos = 16.0f;
             //For each of distance between child and parent bone, segment line into portions and add a red cude at every segment
                     for (int s =1; s<=16; s++)

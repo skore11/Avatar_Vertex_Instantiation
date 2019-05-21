@@ -35,10 +35,11 @@ public class MassSpawner3D : MonoBehaviour
     public static int index =0;
     private float     MassUnitSize;
     public Dictionary<int, GameObject> Primitives = new Dictionary<int, GameObject>();
-    private Vector3[] positions;
+    private Vector3[] nextPositions = null;
     
 
     public CanvasTouchManager UITouchHandler;
+    internal int childCount;
 
     //===========================================================================================
 
@@ -55,9 +56,15 @@ public class MassSpawner3D : MonoBehaviour
 
     void FixedUpdate()
     {
+        //insert skeleton
+        if (this.nextPositions == null)
+        {
+            return;
+        }
         foreach (var indexedPrimitive in Primitives)
         {
-            Vector3 newPosition = TranslateToUnityWorldSpace(positions[indexedPrimitive.Key]);
+            Vector3 newPosition = TranslateToUnityWorldSpace(nextPositions[indexedPrimitive.Key]);
+            
             GameObject primi = indexedPrimitive.Value;
             Rigidbody rb = primi.GetComponent<Rigidbody>();
             if (rb)
@@ -69,7 +76,14 @@ public class MassSpawner3D : MonoBehaviour
                 primi.transform.position = newPosition;
             }
         }
-       // Debug.Log(MassPrefab.GetComponent<Rigidbody>().velocity);
+        this.nextPositions = null;
+        // Debug.Log(MassPrefab.GetComponent<Rigidbody>().velocity);
+        //float moveHorizontal = Input.GetAxis("Horizontal");
+        //float moveVertical = Input.GetAxis("Vertical");
+        //float moveUpDown = Input.GetAxis("UpandDown");
+
+        //Vector3 movement = new Vector3 (moveHorizontal, moveUpDown, moveVertical);
+        //transform.Translate(movement);
     }
 
     //===========================================================================================
@@ -89,13 +103,12 @@ public class MassSpawner3D : MonoBehaviour
         }
         Primitives.Clear();
 
-        positions = p;
         int index = 0;
         
         InsideTester insideTester = GetComponent<InsideTester>();
         insideTester.meshCollider.gameObject.SetActive(true);
         
-        foreach (Vector3 massPosition in positions)
+        foreach (Vector3 massPosition in p)
         {
             //translate y to z so we can use Unity's in-built gravity on the y axis.
 
@@ -109,10 +122,11 @@ public class MassSpawner3D : MonoBehaviour
                 springMassObject.transform.localScale = Vector3.one * MassUnitSize;
                 Primitives[index] = springMassObject;
                 springMassObject.SetActive(true);
-            }
-            index++;
+        }
+        index++;
         }
         insideTester.meshCollider.gameObject.SetActive(false);
+      
     }
 
 
@@ -123,7 +137,7 @@ public class MassSpawner3D : MonoBehaviour
 
     public void UpdatePositions(Vector3[] p)
     {
-        positions = p;
+        nextPositions = p;
     }
 
     //===========================================================================================
@@ -131,12 +145,12 @@ public class MassSpawner3D : MonoBehaviour
     // As of now it is clamped to a certain bound in 3 axes
     //===========================================================================================
 
-    private Vector3 TranslateToUnityWorldSpace(Vector3 gridPosition)
+    public Vector3 TranslateToUnityWorldSpace(Vector3 gridPosition)
     {
         return new Vector3(
-            Mathf.Clamp(gridPosition.x, -20f, 20f),
-            Mathf.Clamp(gridPosition.z, -20f, 20f),
-            Mathf.Clamp(gridPosition.y, -20f, 20f));
+            Mathf.Clamp(gridPosition.x, -1000f, 1000f),
+            Mathf.Clamp(gridPosition.z, -1000f, 1000f),
+            Mathf.Clamp(gridPosition.y, -1000f, 1000f));
     }
 
 
