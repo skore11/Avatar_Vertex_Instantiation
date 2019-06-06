@@ -7,6 +7,7 @@ public class TestMold : MonoBehaviour
 
     public MassSpringSystem3D mySpringSystem;
     public MassSpawner3D mySpawner;
+    public float radius = 0.1f;
     //public MassSpawner3D spawner;
     // Start is called before the first frame update
     void Start()
@@ -37,27 +38,40 @@ public class TestMold : MonoBehaviour
             //Vector3[] moldPositionsforMyspawner = new Vector3[testSpringSystem.VertCount/2];
             //testSpawner.Primitives[k].transform.position = mySpawner.Primitives[index].transform.position;
             float dist = Vector3.Distance(mySpawner.transform.position,testSpawner.transform.position);
-                if (dist < 5.0f)
+            if (dist < 5.0f)
+            {
+                //string debugText = "";
+                foreach (var indexmass in testSpawner.Primitives)
                 {
-                //Debug.Log("detected");
-                for (int k = 0; k < testSpawner.Primitives.Count/2; k++)
-                {
-                    testSpawner.transform.GetChild(k/2).position = mySpawner.transform.GetChild(k).position ;
+                    int index = indexmass.Key;
+                    GameObject mass = indexmass.Value;
+                    // use overlapsphere to check whether a voxel of mine is close:
+                    foreach (Collider coll in Physics.OverlapSphere(mass.transform.position, radius))
+                    {
+                        if (coll.transform.parent == this.transform)
+                        {
+                            Vector3 force = coll.transform.position - mass.transform.position;
+                            //debugText += "\nAdding force from " + mass.name + " to " + coll.gameObject.name + " of " + force;
+                            break;
+                        }
+                    }
+                    //mass.GetComponent<Rigidbody>().AddForce(force);
                     //mySpawner.transform.GetChild(k).position = testSpawner.transform.GetChild(k / 2).position;
-                    moldPositions[k] = testSpawner.transform.GetChild(k).position;
+                    //Debug.Log(testSpawner.transform.GetChild(k).name);
+                    //moldPositions[k] = testSpawner.transform.GetChild(k).position;
                     //moldPositionsforMyspawner[k] = mySpawner.transform.GetChild(k).position;
                     //moldForces[k].x = xNoise;
                     //moldForces[k].y = yNoise;
                     //moldForces[k].z = zNoise;
                 }
-                testSpringSystem.positionBuffer.SetData(moldPositions);
+                //Debug.Log(debugText);
+                //testSpringSystem.positionBuffer.SetData(moldPositions);
                 //mySpringSystem.positionBuffer.SetData(moldPositionsforMyspawner);
                 //Ms3D.externalForcesBuffer.SetData(moldForces);
             }
-                 
-            }
         }
-
-
     }
+
+
+}
 

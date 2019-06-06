@@ -69,7 +69,9 @@ public class MassSpawner3D : MonoBehaviour
             Rigidbody rb = primi.GetComponent<Rigidbody>();
             if (rb)
             {
-                rb.position = newPosition;
+                rb.AddForce(newPosition - rb.position);
+                //rb.position = newPosition;
+
             }
             else
             {

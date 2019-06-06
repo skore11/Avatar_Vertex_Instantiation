@@ -91,7 +91,7 @@ public class MassSpringSystem3D : MonoBehaviour
      *  also decrease the time taken for the system to return to a
      *  'stable' state.
      */
-    [Range(0.1f, 100.0f)] public float SpringStiffness = 10.0f;
+    [Range(0.1f, 500.0f)] public float SpringStiffness = 10.0f;
 
     /** The lenght of the springs in the grid. This defines how far
      *  each mass unit is at a resting state.
@@ -761,9 +761,9 @@ public class MassSpringSystem3D : MonoBehaviour
                 Vector3 velocity = mass.GetComponent<Rigidbody>().velocity;
                 //Debug.Log(mass.GetComponent<Rigidbody>().velocity);
                 //Debug.Log(prevVel);
-                //gravityForces[index].x = /*Mathf.Round*/(Mass * ((velocity.x - prevVel.x) / Time.fixedDeltaTime));
-                //gravityForces[index].y = /*Mathf.Round*/(Mass * ((velocity.z - prevVel.y) / Time.fixedDeltaTime));
-                //gravityForces[index].z = Mass * ((velocity.y - prevVel.z) / Time.fixedDeltaTime);
+                gravityForces[index].x = /*Mathf.Round*/(Mass * ((velocity.x - prevVel.x)));
+                gravityForces[index].y = /*Mathf.Round*/(Mass * ((velocity.z - prevVel.y)));
+                gravityForces[index].z = Mass * ((velocity.y - prevVel.z));
 
                 //double tempX = (Mass * ((velocity.x - prevVel.x) / Time.deltaTime));
                 //double tempY = (Mass * ((velocity.z - prevVel.y) / Time.deltaTime));
@@ -776,9 +776,9 @@ public class MassSpringSystem3D : MonoBehaviour
                 //Might have to just set the gravity manually for mass; here mass is 1
                 //if (foundGravity == true)
                 //{
-                gravityForces[index].x = Mathf.Clamp(gravityForces[index].x, 0.0f, 0.0f);
-                gravityForces[index].y = Mathf.Clamp(gravityForces[index].y, 0.0f, 0.0f);
-                gravityForces[index].z = Mathf.Clamp(gravityForces[index].z, -9.8f, -9.8f);
+                //gravityForces[index].x = Mathf.Clamp(gravityForces[index].x, 0.0f, 0.0f);
+                //gravityForces[index].y = Mathf.Clamp(gravityForces[index].y, 0.0f, 0.0f);
+                //gravityForces[index].z = Mathf.Clamp(gravityForces[index].z, -9.8f, -9.8f);
                 foundGravityForces = true;
                 //}//
                 //Debug.Log("Forces:" + gravityForces[index].x + ":" + gravityForces[index].y + ":" + gravityForces[index].z);
