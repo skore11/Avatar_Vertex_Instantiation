@@ -39,7 +39,7 @@ public class MassSpawner3D : MonoBehaviour
     
 
     public CanvasTouchManager UITouchHandler;
-    internal int childCount;
+    //internal int childCount;
 
     //===========================================================================================
 
@@ -49,7 +49,7 @@ public class MassSpawner3D : MonoBehaviour
 
     void Start()
     {
-        
+        //Debug.Log(MassPrefab.GetComponent<Rigidbody>().mass);
     }
 
 
@@ -67,9 +67,13 @@ public class MassSpawner3D : MonoBehaviour
             
             GameObject primi = indexedPrimitive.Value;
             Rigidbody rb = primi.GetComponent<Rigidbody>();
+            Vector3 dist = newPosition - rb.position;
+            float len = dist.sqrMagnitude;
+
             if (rb)
             {
                 rb.AddForce(newPosition - rb.position);
+
                 //rb.position = newPosition;
 
             }

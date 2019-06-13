@@ -78,20 +78,22 @@ public class MassSpringSystem3D : MonoBehaviour
      *  Increasing this will make the mass points more resistive to
      *  the springs in the model, but will also reduce their velocity.
      */
-    [Range(1.0f, 100.0f)] public float Mass = 1.0f;
+    [Range(0.01f, 100.0f)] public float Mass = 1.0f;
+    
+    
 
     /** The level of damping in the system. Increasing this value
      *  will cause the system to return to a more 'stable' state quicker,
      *  and will reduce the propagation of forces throughout the grid.
      */
-    [Range(0.1f, 0.999f)] public float Damping = 0.1f;
+    [Range(0.0001f, 5.0f)] public float Damping = 0.1f;
 
     /** The stiffness of the spings in the grid. Increasing this will
      *  cause mass points to 'rebound' with higher velocity, and will
      *  also decrease the time taken for the system to return to a
      *  'stable' state.
      */
-    [Range(0.1f, 500.0f)] public float SpringStiffness = 10.0f;
+    [Range(0.0001f, 5.0f)] public float SpringStiffness = 0.05f;
 
     /** The lenght of the springs in the grid. This defines how far
      *  each mass unit is at a resting state.
@@ -185,6 +187,7 @@ public class MassSpringSystem3D : MonoBehaviour
 
     void Start()
     {
+        
         ReleaseBuffers();//when to release the buffers?
         //Use the bone transforms from viewskeleton to transfer control to appropriate masses and 
         //run active ragdoll
@@ -351,7 +354,8 @@ public class MassSpringSystem3D : MonoBehaviour
      * Additionally there is bool to check if the mass unit is also a bone transferred from viewskeleton function
      */
     public static bool IsMassUnit(string objectTag) { return objectTag == "MassUnit"; }
-    public static bool IsBoneMassUnit(string objectTag) { return objectTag == "MassUnit + BoneUnit"; }
+    //
+    //public static bool IsBoneMassUnit(string objectTag) { return objectTag == "MassUnit + BoneUnit"; }
 
     /** Get the values of the mass positions from the compute buffer.
      */
@@ -761,9 +765,14 @@ public class MassSpringSystem3D : MonoBehaviour
                 Vector3 velocity = mass.GetComponent<Rigidbody>().velocity;
                 //Debug.Log(mass.GetComponent<Rigidbody>().velocity);
                 //Debug.Log(prevVel);
-                gravityForces[index].x = /*Mathf.Round*/(Mass * ((velocity.x - prevVel.x)));
-                gravityForces[index].y = /*Mathf.Round*/(Mass * ((velocity.z - prevVel.y)));
-                gravityForces[index].z = Mass * ((velocity.y - prevVel.z));
+                //Mass = Mass / VertCount;
+                gravityForces[index].x = /*Mathf.Round*/((Mass) * ((velocity.x - prevVel.x)));
+                gravityForces[index].y = /*Mathf.Round*/((Mass) * ((velocity.z - prevVel.y)));
+                gravityForces[index].z = (Mass) * ((velocity.y - prevVel.z));
+
+                //gravityForces[index].x = /*Mathf.Round*/((0.0f) * ((velocity.x - prevVel.x)));
+                //gravityForces[index].y = /*Mathf.Round*/((0.0f) * ((velocity.z - prevVel.y)));
+                //gravityForces[index].z = (0.0f) * ((velocity.y - prevVel.z));
 
                 //double tempX = (Mass * ((velocity.x - prevVel.x) / Time.deltaTime));
                 //double tempY = (Mass * ((velocity.z - prevVel.y) / Time.deltaTime));
@@ -838,7 +847,7 @@ public class MassSpringSystem3D : MonoBehaviour
         MassSpringComputeShader.SetBuffer(VelKernel, SpringComputeShaderProperties3D.PositionBufferName, positionBuffer);
     }
 
-    float lastDebugTime = 0f;
+    //float lastDebugTime = 0f;
 
     void UpdatePrimitivePositions()// start here
     {
