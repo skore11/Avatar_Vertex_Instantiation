@@ -144,9 +144,9 @@ public class MassSpringSystem3D : MonoBehaviour
     private const int gridUnitSideX = 3;
     private const int gridUnitSideY = 3;
     private const int gridUnitSideZ = 3; // leave it at 7 for now
-    private const int numThreadsPerGroupX = 10;
+    private const int numThreadsPerGroupX = 6;
     private const int numThreadsPerGroupY = 10;
-    private const int numThreadsPerGroupZ = 10; // leave it at 1 for now
+    private const int numThreadsPerGroupZ = 7; // leave it at 1 for now
 
     /** The resolution of our entire grid, according to the resolution and layout of the individual
      *  blocks processed in parallel by the compute shader. Include 3rd dimenion Z by iniitalising:
@@ -168,7 +168,7 @@ public class MassSpringSystem3D : MonoBehaviour
     /** This material can used to render the mass points directly (rather than using game objects).
      *  This material is instantiated using the RenderShader shader.
      */
-    //private Material RenderMaterial;
+    private Material RenderMaterial;
 
     //Check for skeleton
     //public  GameObject objectSkeleton;
@@ -206,12 +206,13 @@ public class MassSpringSystem3D : MonoBehaviour
     {
         UpdateSpawnerPosCopy();
         VertCount = GridResX * GridResY * GridResZ;
-        //CreateMaterialFromRenderShader();
+        CreateMaterialFromRenderShader();
         CreateBuffers();// creates all the buffers for positions, velocity, neighbors ,forces  also finds both kernels Poskernel and Velkernel
                         // set neighbors buffer: only once since it never changes
 
         MassSpringComputeShader.SetBuffer(VelKernel/*PosKernel*/, SpringComputeShaderProperties3D.NeighboursBufferName, neighboursBuffer);
         Spawner.SetMassUnitSize(SpringLength);
+        Spawner.SetMassUnitMass(Mass);
         Spawner.SpawnPrimitives(Positions);
         foreach (var indexmass in Spawner.Primitives)// is there some way to avoid going through this arraylist every frame
         {
@@ -308,12 +309,12 @@ public class MassSpringSystem3D : MonoBehaviour
      * than maintaining game objects.
     */
 
-    /*void OnPostRender ()
+/*    void OnPostRender ()
     {
         Dispatch ();
         RenderDataPoints ();
-    }*/
-
+    }
+*/
     public void OnDrawGizmos()
     {
         // Display the size of the massspringsystem
@@ -322,7 +323,14 @@ public class MassSpringSystem3D : MonoBehaviour
         float y = gridUnitSideY * numThreadsPerGroupY * SpringLength;
         float z = gridUnitSideZ * numThreadsPerGroupZ * SpringLength;
         //Debug.Log("Gizmo size: " + x + y + z);
-        Gizmos.DrawWireCube(transform.position, new Vector3(x, z, y));
+        Gizmos.DrawWireCube(transform.position, new Vector3(x, y, z));
+
+        RenderDataPoints();
+        // draw dots for all voxels also the disabled ones:
+//        foreach (Vector3 position in Positions)
+//        {
+//            Graphics.DrawProcedural()
+//        }
 
         // draw lines for current velocity and external forces for every active particle:
         // TODO
@@ -341,7 +349,7 @@ public class MassSpringSystem3D : MonoBehaviour
         //}
     }
 
-        private void OnDisable()
+    private void OnDisable()
     {
         ReleaseBuffers();
     }
@@ -462,17 +470,18 @@ public class MassSpringSystem3D : MonoBehaviour
         Vector2[] neighbours = new Vector2[VertCount * numNeighbours];
         int neighboursArrayIndex = 0;
         int vertex = 0;
+
         // calculating 3D coordinates: innermost loop is x, then y, then z. this order that is expected by the compute shader!
 
         UpdateSpawnerPosCopy();
         for (int k = 0; k < GridResZ; k++)
         {
             float z = (((k ) - GridResZ / 2.0f) / GridResZ) * GetWorldGridSideLengthZ();
-            z = z + SpawnerY;
+            z = z + SpawnerZ;
             for (int j = 0; j < GridResY; j++)
             {
                 float y = (((j ) - GridResY / 2.0f) / GridResY) * GetWorldGridSideLengthY();
-                y = y + SpawnerZ;
+                y = y + SpawnerY;
                 for (int i = 0; i < GridResX; i++)
                 {
                     float x = (((i ) - GridResX / 2.0f) / GridResX) * GetWorldGridSideLengthX();
@@ -524,13 +533,13 @@ public class MassSpringSystem3D : MonoBehaviour
             neighboursBuffer.Release();
     }
 
-    //void CreateMaterialFromRenderShader()
-    //{
-    //    if (RenderShader != null)
-    //        RenderMaterial = new Material(RenderShader);
-    //    else
-    //        Debug.Log("Warning! Attempting to initialise MassSpringSystem without setting the Shader variable.");
-    //}
+    void CreateMaterialFromRenderShader()
+    {
+        if (RenderShader != null)
+            RenderMaterial = new Material(RenderShader);
+        else
+            Debug.Log("Warning! Attempting to initialise MassSpringSystem without setting the Shader variable.");
+    }
 
     //===========================================================================================
     // Touch Input
@@ -767,8 +776,8 @@ public class MassSpringSystem3D : MonoBehaviour
                 //Debug.Log(prevVel);
                 //Mass = Mass / VertCount;
                 gravityForces[index].x = /*Mathf.Round*/((Mass) * ((velocity.x - prevVel.x)));
-                gravityForces[index].y = /*Mathf.Round*/((Mass) * ((velocity.z - prevVel.y)));
-                gravityForces[index].z = (Mass) * ((velocity.y - prevVel.z));
+                gravityForces[index].y = /*Mathf.Round*/((Mass) * ((velocity.y - prevVel.y)));
+                gravityForces[index].z = (Mass) * ((velocity.z - prevVel.z));
 
                 //gravityForces[index].x = /*Mathf.Round*/((0.0f) * ((velocity.x - prevVel.x)));
                 //gravityForces[index].y = /*Mathf.Round*/((0.0f) * ((velocity.z - prevVel.y)));
@@ -884,11 +893,11 @@ public class MassSpringSystem3D : MonoBehaviour
     public void TranslateMassSpringPositions(Vector3 movement)
     {
         UpdateSpawnerPosCopy();
-        Vector3 swappedMovement = new Vector3(movement.x, movement.z, movement.y);
+        //Vector3 swappedMovement = new Vector3(movement.x, movement.z, movement.y);
         Vector3[] positions = new Vector3[VertCount];
         for (int index = 0; index < Positions.Length; ++index)
         {
-            positions[index] = Positions[index] + swappedMovement;
+            positions[index] = Positions[index] + movement;
         }
         positionBuffer.SetData(positions);
         _positions = null;
@@ -916,15 +925,18 @@ public class MassSpringSystem3D : MonoBehaviour
     /*
      * If you want to use this to debug the positions, you need to override OnPostRender() instead of Update().
      */
-    //void RenderDataPoints()
-    //{
-    //    RenderMaterial.SetPass(0);
-    //    //RenderMaterial.SetBuffer(MassSpringRenderShaderProperties3D.DebugBuffer, debugBuffer);
-    //    RenderMaterial.SetBuffer(MassSpringRenderShaderProperties3D.PositionsBuffer, positionBuffer);
-    //    RenderMaterial.SetBuffer(MassSpringRenderShaderProperties3D.VelocityBuffer, velocityBuffer);
-    //    Graphics.DrawProcedural(MeshTopology.Points, VertCount);
-    //    //Graphics.DrawProcedural(MeshTopology.Points, vertexCount);
-    //}
+    void RenderDataPoints()
+    {
+        if (RenderMaterial == null)
+        {
+            return;
+        }
+        RenderMaterial.SetPass(0);
+        //RenderMaterial.SetBuffer(MassSpringRenderShaderProperties3D.DebugBuffer, debugBuffer);
+        RenderMaterial.SetBuffer(MassSpringRenderShaderProperties3D.PositionsBuffer, positionBuffer);
+        //RenderMaterial.SetBuffer(MassSpringRenderShaderProperties3D.VelocityBuffer, velocityBuffer);
+        Graphics.DrawProceduralNow(MeshTopology.Points, VertCount);
+    }
 
     //===========================================================================================
     // Animation

@@ -34,6 +34,7 @@ public class MassSpawner3D : MonoBehaviour
 
     public static int index =0;
     private float     MassUnitSize;
+    private float     MassUnitMass;
     public Dictionary<int, GameObject> Primitives = new Dictionary<int, GameObject>();
     private Vector3[] nextPositions = null;
     
@@ -67,12 +68,11 @@ public class MassSpawner3D : MonoBehaviour
             
             GameObject primi = indexedPrimitive.Value;
             Rigidbody rb = primi.GetComponent<Rigidbody>();
-            Vector3 dist = newPosition - rb.position;
-            float len = dist.sqrMagnitude;
 
             if (rb)
             {
-                rb.AddForce(newPosition - rb.position);
+                Vector3 dist = newPosition - rb.position;
+                rb.AddForce(dist * Time.deltaTime);
 
                 //rb.position = newPosition;
 
@@ -96,6 +96,7 @@ public class MassSpawner3D : MonoBehaviour
     // Setter Functions
     //===========================================================================================
     public void SetMassUnitSize(float length) { MassUnitSize = length; }
+    public void SetMassUnitMass(float mass) { MassUnitMass = mass; }
 
     //===========================================================================================
     // Initialisation
@@ -124,15 +125,22 @@ public class MassSpawner3D : MonoBehaviour
             if (insideTester.IsInside(worldPosition))
             {
                 GameObject springMassObject = Instantiate<GameObject>(MassPrefab, worldPosition, Quaternion.identity, this.transform);
+
                 springMassObject.name = "MassObj" + index + " " + massPosition.ToString();
                 springMassObject.transform.localScale = Vector3.one * MassUnitSize;
+                // set the mass of the object:
+                Rigidbody rb = springMassObject.GetComponent<Rigidbody>();
+                if (rb)
+                {
+                    rb.mass = MassUnitMass;
+                }
                 Primitives[index] = springMassObject;
                 springMassObject.SetActive(true);
-        }
-        index++;
+            }
+            index++;
         }
         insideTester.meshCollider.gameObject.SetActive(false);
-      
+        Debug.Log(this.gameObject.name + " spawned " + Primitives.Count + " primitives/voxels");
     }
 
 
@@ -155,8 +163,8 @@ public class MassSpawner3D : MonoBehaviour
     {
         return new Vector3(
             Mathf.Clamp(gridPosition.x, -1000f, 1000f),
-            Mathf.Clamp(gridPosition.z, -1000f, 1000f),
-            Mathf.Clamp(gridPosition.y, -1000f, 1000f));
+            Mathf.Clamp(gridPosition.y, -1000f, 1000f),
+            Mathf.Clamp(gridPosition.z, -1000f, 1000f));
     }
 
 

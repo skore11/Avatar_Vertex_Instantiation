@@ -1,10 +1,10 @@
 ﻿#pragma kernel CSMainPos
 #pragma kernel CSMainVel
 
-#define thread_group_size_x 10
+#define thread_group_size_x 6
 #define thread_group_size_y 10
 // need the following for 3D, but value above 1 might not be allowed before shader model / target 5.0: --strank
-#define thread_group_size_z 10
+#define thread_group_size_z 7
 
 //================================================================================================
 // Summary
