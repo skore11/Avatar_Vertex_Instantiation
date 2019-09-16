@@ -7,6 +7,7 @@ public class TestMelt : MonoBehaviour
 
     public MassSpringSystem3D Ms3D;
     public MassSpawner3D spawner;
+    public KeyCode m_key = KeyCode.M;
     // Start is called before the first frame update
     void Start()
     {
@@ -16,28 +17,36 @@ public class TestMelt : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
-    }
-
-    void OnTriggerEnter(Collider other)
-    {
-        //Debug.Log(other.name);
-        if (other.tag == "ThreatenedSpawner")
+        if (Input.GetKeyDown(m_key))
         {
             Ms3D.GetComponent<MassSpringSystem3D>().Gravity = true;
         }
 
-
-    }
-
-
-    void OnTriggerExit(Collider other)
-    {
-        if (other.tag == "ThreatenedSpawner")
+        if (Input.GetKeyUp(m_key))
         {
             Ms3D.GetComponent<MassSpringSystem3D>().Gravity = false;
-
         }
-
     }
+
+    //void OnTriggerEnter(Collider other)
+    //{
+    //    //Debug.Log(other.name);
+    //    if (other.tag == "ThreatenedSpawner")
+    //    {
+    //        Ms3D.GetComponent<MassSpringSystem3D>().Gravity = true;
+    //    }
+
+
+    //}
+
+
+    //void OnTriggerExit(Collider other)
+    //{
+    //    if (other.tag == "ThreatenedSpawner")
+    //    {
+    //        Ms3D.GetComponent<MassSpringSystem3D>().Gravity = false;
+
+    //    }
+
+    //}
 }

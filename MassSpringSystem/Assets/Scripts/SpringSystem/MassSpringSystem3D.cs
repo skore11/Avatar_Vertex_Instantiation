@@ -217,6 +217,7 @@ public class MassSpringSystem3D : MonoBehaviour
         foreach (var indexmass in Spawner.Primitives)// is there some way to avoid going through this arraylist every frame
         {
             GameObject mass = indexmass.Value;
+            //Debug.Log(mass.name);
             mass.GetComponent<Rigidbody>().useGravity = Gravity;
         }
 
@@ -239,7 +240,7 @@ public class MassSpringSystem3D : MonoBehaviour
 
     void Update()
     {
-        // just check if the object was moved by something (in scene mode for example)
+        // check if the object was moved by something (in scene mode for example)
         if (SpawnerHasMoved())
         {
             Vector3 movement = Spawner.transform.position - new Vector3(SpawnerX, SpawnerY, SpawnerZ);
