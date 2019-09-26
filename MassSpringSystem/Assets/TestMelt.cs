@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TestMelt : MonoBehaviour
+
+    public class TestMelt : MonoBehaviour, IStorable
 {
 
     public MassSpringSystem3D Ms3D;

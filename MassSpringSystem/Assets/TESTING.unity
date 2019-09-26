@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 621472409}
   - component: {fileID: 621472408}
   - component: {fileID: 621472407}
+  - component: {fileID: 621472410}
   m_Layer: 0
   m_Name: Camera
   m_TagString: Untagged
@@ -221,6 +222,23 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &621472410
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 621472406}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6163fb0d05278d74fb2a57bbd1647d18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  touchID: -1
+  HasMouseDown: 1
+  CanvasObjects: []
+  SimulatedPressure: 1
+  voxelTouched: -1
 --- !u!1 &777884909 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1919633540176698, guid: 6acfcd9c9a9ce8540a8b6e0b685e4b5b,
@@ -535,6 +553,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Skin: {fileID: 548841148}
   Spawner: {fileID: 176071151}
+  nearestVertIndex: 
+  unique_Index: 
+  particleRestPositions: []
+--- !u!114 &857070500
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 857070497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3263a112b481fd04e89e95535bc8695f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &894709774 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 210944890372747262, guid: 7c6f2e110a31fea4d86a2e40560a19c8,
@@ -729,7 +762,7 @@ Animator:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1548629219}
-  m_Enabled: 0
+  m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: b03fcc8be31797e4d8e3975a4260cdb9, type: 3}
   m_Controller: {fileID: 9100000, guid: a4ffe2d0b12b20c47b631c82d61a089b, type: 2}
   m_CullingMode: 0

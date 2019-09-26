@@ -36,7 +36,7 @@ public class MassSpawner3D : MonoBehaviour
     private float     MassUnitSize;
     private float     MassUnitMass;
     public Dictionary<int, GameObject> Primitives = new Dictionary<int, GameObject>();
-    private Vector3[] nextPositions = null;
+    public Vector3[] nextPositions = null;
     
 
     public CanvasTouchManager UITouchHandler;
@@ -139,8 +139,8 @@ public class MassSpawner3D : MonoBehaviour
             }
             index++;
         }
-        insideTester.meshCollider.gameObject.SetActive(false);
-        Debug.Log(this.gameObject.name + " spawned " + Primitives.Count + " primitives/voxels");
+        //insideTester.meshCollider.gameObject.SetActive(false);
+        //Debug.Log(this.gameObject.name + " spawned " + Primitives.Count + " primitives/voxels");
     }
 
 
@@ -149,6 +149,7 @@ public class MassSpawner3D : MonoBehaviour
     // Position Updating in Mass Spring System
     //===========================================================================================
 
+        //Changed from Vector3[]
     public void UpdatePositions(Vector3[] p)
     {
         nextPositions = p;

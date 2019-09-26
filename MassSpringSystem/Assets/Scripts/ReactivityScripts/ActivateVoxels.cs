@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 //Use this script to access the Mass Spring System parameters.
 //Send buffers with position and velocity info from here
 //The different areas of access are defined in 3 separate functions 

@@ -58,7 +58,7 @@ public class WeightList
             scale = value.localScale;
         }
     }
-    public int boneIndex; // for transform nad returns the following:
+    public int boneIndex; // for transform and returns the following:
     public Vector3 pos;
     public Vector4 rot;
     public Vector3 scale;
@@ -147,7 +147,7 @@ public class VertMapBuilder
         Matrix4x4[] cachedBindposes = skinnedMeshRenderer.sharedMesh.bindposes;
         BoneWeight[] cachedBoneWeights = skinnedMeshRenderer.sharedMesh.boneWeights;
 
-        // Make a CWeightList for each bone in the skinned mesh
+        // Make an array of WeightLists for each bone in the skinned mesh
         WeightList[] nodeWeights = new WeightList[skinnedMeshRenderer.bones.Length];
         for (int i = 0; i < skinnedMeshRenderer.bones.Length; i++)
         {
