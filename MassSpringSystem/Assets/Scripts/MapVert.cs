@@ -24,6 +24,7 @@ public class MapVert : MonoBehaviour
     //public Dictionary<int, int> MassToVertMap = new Dictionary<int, int>();
     public SkinnedMeshRenderer Skin;
     public MassSpawner3D Spawner;
+    public MassSpringSystem3D MSSystem;
 
     //Required for calculating the nearest mesh vertex index for each of the mass positions
     public List<int> nearestVertIndex;
@@ -309,7 +310,8 @@ public class MapVert : MonoBehaviour
         //set all particle postions to zero Vector first
         for (int i = 0; i < particlePositions.Count; i++)
         {
-            particlePositions[i] = Spawner.nextPositions[i];
+            //particlePositions[i] = Spawner.nextPositions[i];
+            particlePositions[i] = Vector3.zero;
         }
 
 
@@ -328,63 +330,47 @@ public class MapVert : MonoBehaviour
 
         //print(particlePositions.Count);
 
-        //if (Spawner.nextPositions == null && particlePositions.Count == 0)
-        //{
-        //    return;
-        //}
+        if (particlePositions.Count == 0)
+        {
+            return;
+        }
         //print(particlePositions.Count);
         // Now convert each point into local coordinates of this object.
         //List<Vector3> nextPos = new List<Vector3>(particlePositions.Count);
-        for (int i = 0; i < particlePositions.Count; i++)
-        {
-            
-            particlePositions[i] = transform.InverseTransformPoint(particlePositions[i]);
-            //foreach (var indexedPrimitive in Spawner.Primitives)
-            //{
+        Vector3[] shapeAnimVectors = new Vector3[MSSystem.VertCount];
 
-            //foreach (var a in MassToVertMap)
-            //{
-            //    int x = a.Key;//Mass name and index
-            //    int y = a.Value;//Mesh vertex name and index
-            //    Spawner.nextPositions[x] = particlePositions[i];
-            //}
-
-            Spawner.nextPositions[i] = particlePositions[i];
-            ////}
-            ////print(Spawner.nextPositions[i]);
-            //Spawner.nextPositions[i] = Spawner.TranslateToUnityWorldSpace(Spawner.nextPositions[i]);
+        //for (int i = 0; i < particlePositions.Count; i++)
+        //{
+        int ppIndex = 0;
+        foreach (var indexedPrimitive in Spawner.Primitives) {
+            //Spawner.nextPositions[i] = particlePositions[i];
+            //animForces[i] = new Vector3(particlePositions[i].x, particlePositions[i].y, particlePositions[i].z);
+            int primIndex = indexedPrimitive.Key;
+            Vector3 temp = particlePositions[ppIndex] - MSSystem.Positions[primIndex] ;
+            //print(temp);
+            shapeAnimVectors[primIndex] = temp;// * Time.deltaTime;
+            ppIndex++;
+            //print(shapeAnimVectors[i]);
+            //particlePositions[i] = (Spawner.nextPositions[i] - particlePositions[i]);
+            //    ////}
+            //    ////print(Spawner.nextPositions[i]);
+            //    //Spawner.nextPositions[i] = Spawner.TranslateToUnityWorldSpace(Spawner.nextPositions[i]);
         }
 
-        
-        //print(Spawner.nextPositions.Length);
+        //MSSystem.positionBuffer.SetData(particlePositions);
+        MSSystem.externalForcesBuffer.SetData(shapeAnimVectors);
+        //Spawner.UpdatePositions(animForces);
+        //int index = 0;
+        //foreach (var indexedPrimitive in Spawner.Primitives)
+        //{
+        //    //print("index:" + index + "vector3:" + shapeAnimVectors[index]);
+        //    GameObject primi = indexedPrimitive.Value;
+        //    Rigidbody rb = primi.GetComponent<Rigidbody>();
+        //    rb.AddForce(shapeAnimVectors[index]);
 
-
-
-        //Spawner.nextPositions = particlePositions;
-
-        //    foreach (var indexedPrimitive in Spawner.Primitives)
-        //    {
-        //        //Vector3 newPosition = Spawner.TranslateToUnityWorldSpace(Spawner.nextPositions[indexedPrimitive.Key]);
-
-        //        Vector3 newPosition = particlePositions[indexedPrimitive.Key];
-
-        //        GameObject primi = indexedPrimitive.Value;
-        //        Rigidbody rb = primi.GetComponent<Rigidbody>();
-
-        //        if (rb)
-        //        {
-        //            Vector3 dist = newPosition - rb.position;
-        //            rb.AddForce(dist * Time.deltaTime);
-
-        //            //rb.position = newPosition;
-
-        //        }
-        //        else
-        //        {
-        //            primi.transform.position = newPosition;
-        //        }
-        //    }
-        //    Spawner.nextPositions = null;
+        //    index++;
+        //}
+        //index = 0;
     }
 
 

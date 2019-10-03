@@ -37,10 +37,10 @@ using UnityEngine;
                     jiggleForces[index].y = -zNoise;
                     jiggleForces[index].z = yNoise;
 
-                    Ms3D.externalForcesBuffer.SetData(jiggleForces);
+                    
                 }
-
-                if (Input.GetKeyUp(m_key))
+            Ms3D.externalForcesBuffer.SetData(jiggleForces);
+            if (Input.GetKeyUp(m_key))
                 {
                     Ms3D.GetComponent<MassSpringSystem3D>().Gravity = false;
                 }

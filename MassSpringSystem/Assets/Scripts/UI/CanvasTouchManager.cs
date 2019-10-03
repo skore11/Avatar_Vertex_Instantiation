@@ -127,7 +127,7 @@ public class CanvasTouchManager : CanvasTouchHandler
             //Debug.Log("hit somthing" + obj.name);
             if (MassSpringSystem3D.IsMassUnit (obj.tag)/*||MassSpringSystem3D.IsBoneMassUnit(obj.tag)*/)
             {
-                int index = Int32.Parse(obj.name.Substring(7, obj.name.IndexOf(' ') - 7));// ask stefan definitely
+                int index = Int32.Parse(obj.name.Substring(7, obj.name.IndexOf(' ') - 7));
                 voxelTouched = index;
                 //Debug.Log(index);
                
