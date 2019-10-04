@@ -71,20 +71,20 @@ public class MassSpawner3D : MonoBehaviour
             GameObject primi = indexedPrimitive.Value;
             Rigidbody rb = primi.GetComponent<Rigidbody>();
 
-            if (rb)
-            {
+            //if (rb)
+            //{
                 
-                Vector3 dist = newPosition - rb.position;
-                //print(dist);
-                rb.AddForce(dist * Time.deltaTime);
+            //    Vector3 dist = newPosition - rb.position;
+            //    //print(dist);
+            //    rb.AddForce(dist * Time.deltaTime);
 
-                //rb.position = newPosition;
+            //    //rb.position = newPosition;
 
-            }
-            else
-            {
+            //}
+            //else
+            //{
                 primi.transform.position = newPosition;
-            }
+            //}
         }
         this.nextPositions = null;
         // Debug.Log(MassPrefab.GetComponent<Rigidbody>().velocity);

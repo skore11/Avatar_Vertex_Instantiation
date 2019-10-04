@@ -348,7 +348,9 @@ public class MapVert : MonoBehaviour
             int primIndex = indexedPrimitive.Key;
             Vector3 temp = particlePositions[ppIndex] - MSSystem.Positions[primIndex] ;
             //print(temp);
-            shapeAnimVectors[primIndex] = temp;// * Time.deltaTime;
+            shapeAnimVectors[primIndex].x = temp.x;
+            shapeAnimVectors[primIndex].y = temp.y;
+            shapeAnimVectors[primIndex].z = temp.z; ;//* Time.fixedDeltaTime;
             ppIndex++;
             //print(shapeAnimVectors[i]);
             //particlePositions[i] = (Spawner.nextPositions[i] - particlePositions[i]);

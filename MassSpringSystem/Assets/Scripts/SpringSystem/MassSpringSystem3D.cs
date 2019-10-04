@@ -93,7 +93,7 @@ public class MassSpringSystem3D : MonoBehaviour
      *  also decrease the time taken for the system to return to a
      *  'stable' state.
      */
-    [Range(0.0001f, 5.0f)] public float SpringStiffness = 0.05f;
+    [Range(0.0001f, 10.0f)] public float SpringStiffness = 0.05f;
 
     /** The lenght of the springs in the grid. This defines how far
      *  each mass unit is at a resting state.
@@ -212,7 +212,7 @@ public class MassSpringSystem3D : MonoBehaviour
 
         MassSpringComputeShader.SetBuffer(VelKernel/*PosKernel*/, SpringComputeShaderProperties3D.NeighboursBufferName, neighboursBuffer);
         Spawner.SetMassUnitSize(SpringLength);
-        Spawner.SetMassUnitMass(Mass);
+        Spawner.SetMassUnitMass(Mass/VertCount);
         Spawner.SpawnPrimitives(Positions);
         foreach (var indexmass in Spawner.Primitives)// is there some way to avoid going through this arraylist every frame
         {
@@ -796,8 +796,8 @@ public class MassSpringSystem3D : MonoBehaviour
                 //if (foundGravity == true)
                 //{
                 //gravityForces[index].x = Mathf.Clamp(gravityForces[index].x, 0.0f, 0.0f);
-                //gravityForces[index].y = Mathf.Clamp(gravityForces[index].y, 0.0f, 0.0f);
-                //gravityForces[index].z = Mathf.Clamp(gravityForces[index].z, -9.8f, -9.8f);
+                //gravityForces[index].y = Mathf.Clamp(gravityForces[index].y, -9.8f, -9.8f);
+                //gravityForces[index].z = Mathf.Clamp(gravityForces[index].z, 0.0f, 0.0f);
                 foundGravityForces = true;
                 //}//
                 //Debug.Log("Forces:" + gravityForces[index].x + ":" + gravityForces[index].y + ":" + gravityForces[index].z);

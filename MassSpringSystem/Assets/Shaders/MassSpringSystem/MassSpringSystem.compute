@@ -184,8 +184,8 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     //const float notEdge = (float) (northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y);
     ////const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y);
     //const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
-    //const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
-    const float notEdge = 1.0f;
+    const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
+    //const float notEdge = 1.0f;
     //const float notEdge = (float)(up_immediateNeighbour.y && down_immediateNeighbour.y);
     //Keep notEdge ? - show stefan
 
