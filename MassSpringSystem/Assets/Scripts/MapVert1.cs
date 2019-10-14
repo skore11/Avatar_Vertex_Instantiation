@@ -1,59 +1,10 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-
-[System.Serializable]
-public class VertexWeight
-{
-    public int index;
-    public Vector3 localPosition;
-    public float weight;
-
-    public VertexWeight(int i, Vector3 p, float w)
-    {
-        index = i;
-        localPosition = p;
-        weight = w;
-    }
-}
-
-[System.Serializable]
-public class WeightList
-{
-    private Transform _temp; // cached on use, not serialized
-    public Transform transform {
-        get {
-            if (_temp == null)
-            {
-                _temp = new GameObject().transform;
-                _temp.position = pos;
-                _temp.rotation = new Quaternion(rot.x, rot.y, rot.z, rot.w);
-                _temp.localScale = scale;
-            }
-            return _temp;
-        }
-        set {
-            pos = value.position;
-            rot = new Vector4(value.rotation.x, value.rotation.y, value.rotation.z, value.rotation.w);
-            scale = value.localScale;
-        }
-    }
-    public int boneIndex; // for transform
-    public Vector3 pos;
-    public Vector4 rot;
-    public Vector3 scale;
-
-    public List<VertexWeight> weights = new List<VertexWeight>();
-}
-
-public class VertmapBuilder
-
-{
+using UnityEngine;
 
 
-}
 
-public class MapVert : MonoBehaviour
+public class MapVert1 : MonoBehaviour
 {
 
     /// <summary>
@@ -79,7 +30,6 @@ public class MapVert : MonoBehaviour
     //Required for calculating the nearest mesh vertex index for each of the mass positions
     public List<int> nearestVertIndex;
     public List<int> unique_Index;//unique index of mesh vertices to map on to Mass positions
-    public List<Vector3> VertOffsetVectors;
 
     private List<Vector3> particlePositions; // world particle positions
 
@@ -105,42 +55,27 @@ public class MapVert : MonoBehaviour
             Spawner = GetComponent<MassSpawner3D>();
         }
     }
-    
+
 
     public int GetNearestVertIndex(Vector3 particlePos, Vector3[] cachedVertices)
     {
         float nearestDist = float.MaxValue;
         int nearestIndex = -1;
-        
+
         for (int i = 0; i < cachedVertices.Length; i++)
         {
-            Vector3 distance = particlePos - cachedVertices[i];
             float dist = Vector3.Distance(particlePos, cachedVertices[i]);
             //Debug.Log("Mass pos: " + particlePos + "mesh vertex pos: " + cachedVertices[i]);
             //Debug.DrawLine(particlePos, cachedVertices[i], Color.blue, 5.5f);
             if (dist < nearestDist)
             {
                 nearestDist = dist;
-                
+
                 nearestIndex = i;
             }
         }
         return nearestIndex;
-        
-    }
 
-    public Vector3 GetVertOffset(Vector3 particlePos, Vector3[] cachedVertices)
-    {
-       
-        Vector3 distance = Vector3.zero;
-
-        for (int i = 0; i < cachedVertices.Length; i++)
-        {
-           distance = particlePos - cachedVertices[i];
-
-
-        }
-        return distance;
     }
 
     public Vector3 GetNearestVertPos(Vector3 particlePos, Vector3[] cachedVertices)
@@ -249,12 +184,11 @@ public class MapVert : MonoBehaviour
         {
             tempCache.Add(cachedVertices[i]);
         }
-        
+
         print("Got this many primitives: " + Spawner.Primitives.Count);
         print("Got this many mesh vertices: " + mesh.vertexCount);
 
 
-        
         foreach (var indexedPrimitive in Spawner.Primitives)
         {
             GameObject mass = indexedPrimitive.Value;
@@ -265,25 +199,24 @@ public class MapVert : MonoBehaviour
             //Debug.Log(mass.name);
             //Store the index of the nearest mesh vertex for the current mass
             int nearestIndexforMass = GetNearestVertIndex(mass.transform.localPosition, cachedVertices);
-            
             Vector3 nearestVertexPosforMass = GetNearestVertPos(mass.transform.localPosition, cachedVertices);
-            Vector3 VertOffset = mass.transform.localPosition - nearestVertexPosforMass;
+
 
             //print(string.Format("For mass number {0}, found the vertex number {1}", indexedPrimitive.Key, nearestIndexforMass));
             //perhaps the change the keys and values to Vector3
             //MassToVertMap[indexedPrimitive.Key] = nearestIndexforMass;
-            //MassToVertMap[indexedPrimitive.Key] = nearestVertexPosforMass;
+            MassToVertMap[indexedPrimitive.Key] = nearestVertexPosforMass;
             //print("Mass no. : " + indexedPrimitive.Value + "Mass rest postion: " + restPosition + "and associated vertex: " + nearestIndexforMass);//correct rest positions of masses in MS grid
-            VertOffsetVectors.Add(VertOffset);
-            unique_Index.Add(nearestIndexforMass);   
+
+            unique_Index.Add(nearestIndexforMass);
         }
 
         //set the bone weights using the original cached mesh vertices and the indices of said vertices obtained from above
-            SetBoneWeights(tempCache, unique_Index);
+        SetBoneWeights(tempCache, unique_Index);
 
-       
-            particlePositions = particleRestPositions;
-            tempCache = null;          
+
+        particlePositions = particleRestPositions;
+
 
 
     }
@@ -344,8 +277,8 @@ public class MapVert : MonoBehaviour
             foreach (VertexWeight vw in wList.weights)
             {
                 Transform t = Skin.bones[wList.boneIndex];
-                particlePositions[vw.index] += t.localToWorldMatrix.MultiplyPoint3x4(vw.localPosition) * vw.weight + VertOffsetVectors[vw.index];
-                
+                particlePositions[vw.index] += t.localToWorldMatrix.MultiplyPoint3x4(vw.localPosition) * vw.weight;
+
                 //print(particlePositions[vw.index]);
             }
         }
@@ -364,21 +297,22 @@ public class MapVert : MonoBehaviour
         //for (int i = 0; i < particlePositions.Count; i++)
         //{
         int ppIndex = 0;
-        foreach (var indexedPrimitive in Spawner.Primitives) {
-           
+        foreach (var indexedPrimitive in Spawner.Primitives)
+        {
+
             int primIndex = indexedPrimitive.Key;
-            Vector3 temp = particlePositions[ppIndex] - MSSystem.Positions[primIndex]  ;
+            Vector3 temp = particlePositions[ppIndex] - MSSystem.Positions[primIndex];
             //print(temp);
-            shapeAnimVectors[primIndex].x = temp.x ;
-            shapeAnimVectors[primIndex].y = temp.y ;
-            shapeAnimVectors[primIndex].z = temp.z ; ;//* Time.fixedDeltaTime;
+            shapeAnimVectors[primIndex].x = temp.x;
+            shapeAnimVectors[primIndex].y = temp.y;
+            shapeAnimVectors[primIndex].z = temp.z; ;//* Time.fixedDeltaTime;
             ppIndex++;
-           
+
         }
 
         //MSSystem.positionBuffer.SetData(particlePositions);
         MSSystem.externalForcesBuffer.SetData(shapeAnimVectors);
-   
+
     }
 
 

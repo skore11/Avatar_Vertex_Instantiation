@@ -1,10 +1,10 @@
 ﻿#pragma kernel CSMainPos
 #pragma kernel CSMainVel
 
-#define thread_group_size_x 6
+#define thread_group_size_x 10
 #define thread_group_size_y 10
 // need the following for 3D, but value above 1 might not be allowed before shader model / target 5.0: --strank
-#define thread_group_size_z 7
+#define thread_group_size_z 10
 
 //================================================================================================
 // Summary
@@ -182,10 +182,11 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     /** Our grid is structured to have rigid, non-moving edges. 
      */
     //const float notEdge = (float) (northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y);
-    ////const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y);
-    //const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
-    const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
-    //const float notEdge = 1.0f;
+    const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y);
+    const float notEdge2 = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
+	const float notEdge3 = notEdge + notEdge2;
+	//const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
+    //const float notEdge = 10.0f;
     //const float notEdge = (float)(up_immediateNeighbour.y && down_immediateNeighbour.y);
     //Keep notEdge ? - show stefan
 
@@ -235,12 +236,12 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
         upBendForce + downBendForce);//simplify and see which combinations of neighbors' forces cause the grid to go crazy or not
     //Add the external forces from the external forces buffer to the internal neighbour forces.
     
-    const float3 force           = internalForce + externalForcesBuffer[idx].force;
+    const float3 force           =  1.0f * internalForce +  externalForcesBuffer[idx].force;
     //m = fa, a = f/m
     const float3 acceleration    = force / (mass == 0.0f ? 1.0f : mass);
     float        delta           = deltaTimeBuffer[0].deltaTime;
     //notEdge acts like a boolean flag here, zeroing out any vertices that exist along the edges. Remove notedge to allow for non-rigid edges
-    const float3 vDelta = notEdge * acceleration * delta;
+    const float3 vDelta = /*notEdge3 **/ acceleration * delta;
     float3 newVel = velBuffer[idx].vel + vDelta;
     //newVel = newVel.x < 0.1f ? float3 (0.0f, newVel.y, newVel.z) : newVel;
     //newVel = newVel.y < 0.1f ? float3 (newVel.x, 0.0f, newVel.z) : newVel;

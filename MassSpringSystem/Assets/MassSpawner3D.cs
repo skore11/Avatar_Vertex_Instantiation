@@ -36,7 +36,7 @@ public class MassSpawner3D : MonoBehaviour
     private float     MassUnitSize;
     private float     MassUnitMass;
     public Dictionary<int, GameObject> Primitives = new Dictionary<int, GameObject>();
-    public Dictionary<int, int> primitiveMap = new Dictionary<int, int>();
+    //public Dictionary<int, int> primitiveMap = new Dictionary<int, int>();
     public Vector3[] nextPositions = null;
     
 
@@ -66,6 +66,7 @@ public class MassSpawner3D : MonoBehaviour
         foreach (var indexedPrimitive in Primitives)
         {
             //Vector3 newPosition = TranslateToUnityWorldSpace(nextPositions[indexedPrimitive.Key]);
+            //print(indexedPrimitive.Key);
             Vector3 newPosition = nextPositions[indexedPrimitive.Key];
 
             GameObject primi = indexedPrimitive.Value;
@@ -73,7 +74,7 @@ public class MassSpawner3D : MonoBehaviour
 
             //if (rb)
             //{
-                
+
             //    Vector3 dist = newPosition - rb.position;
             //    //print(dist);
             //    rb.AddForce(dist * Time.deltaTime);
