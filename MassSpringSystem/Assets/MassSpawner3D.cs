@@ -36,7 +36,7 @@ public class MassSpawner3D : MonoBehaviour
     private float     MassUnitSize;
     private float     MassUnitMass;
     public Dictionary<int, GameObject> Primitives = new Dictionary<int, GameObject>();
-    //public Dictionary<int, int> primitiveMap = new Dictionary<int, int>();
+    public Dictionary<int, GameObject> NonPrimitivesprimitive = new Dictionary<int, GameObject>();
     public Vector3[] nextPositions = null;
     
 
@@ -119,7 +119,8 @@ public class MassSpawner3D : MonoBehaviour
         
         InsideTester insideTester = GetComponent<InsideTester>();
         insideTester.meshCollider.gameObject.SetActive(true);
-        
+
+                
         foreach (Vector3 massPosition in p)
         {
             //translate y to z so we can use Unity's in-built gravity on the y axis.
@@ -139,11 +140,20 @@ public class MassSpawner3D : MonoBehaviour
                 if (rb)
                 {
                     rb.mass = MassUnitMass;
+                    Primitives[index] = springMassObject;
+                    springMassObject.SetActive(true);
                 }
-                Primitives[index] = springMassObject;
-                springMassObject.SetActive(true);
+                //Primitives[index] = springMassObject;
+                //springMassObject.SetActive(true);
+                else
+                {
+                    NonPrimitivesprimitive[index] = springMassObject;
+                    springMassObject.SetActive(false);
+
+                }
             }
             index++;
+            
         }
 
         

@@ -46,12 +46,7 @@ public class WeightList
     public List<VertexWeight> weights = new List<VertexWeight>();
 }
 
-public class VertmapBuilder
 
-{
-
-
-}
 
 public class MapVert : MonoBehaviour
 {
@@ -70,14 +65,14 @@ public class MapVert : MonoBehaviour
     float refreshRate = 1.0f / 30.0f;
     float timeDelta;
 
-    public Dictionary<int, Vector3> MassToVertMap = new Dictionary<int, Vector3>();
+    
     //public Dictionary<int, int> MassToVertMap = new Dictionary<int, int>();
     public SkinnedMeshRenderer Skin;
     public MassSpawner3D Spawner;
     public MassSpringSystem3D MSSystem;
 
     //Required for calculating the nearest mesh vertex index for each of the mass positions
-    public List<int> nearestVertIndex;
+    
     public List<int> unique_Index;//unique index of mesh vertices to map on to Mass positions
     public List<Vector3> VertOffsetVectors;
 
@@ -129,19 +124,19 @@ public class MapVert : MonoBehaviour
         
     }
 
-    public Vector3 GetVertOffset(Vector3 particlePos, Vector3[] cachedVertices)
-    {
+    //public Vector3 GetVertOffset(Vector3 particlePos, Vector3[] cachedVertices)
+    //{
        
-        Vector3 distance = Vector3.zero;
+    //    Vector3 distance = Vector3.zero;
 
-        for (int i = 0; i < cachedVertices.Length; i++)
-        {
-           distance = particlePos - cachedVertices[i];
+    //    for (int i = 0; i < cachedVertices.Length; i++)
+    //    {
+    //       distance = particlePos - cachedVertices[i];
 
 
-        }
-        return distance;
-    }
+    //    }
+    //    return distance;
+    //}
 
     public Vector3 GetNearestVertPos(Vector3 particlePos, Vector3[] cachedVertices)
     //public int GetNearestVertIndex(Vector3 particlePos, Vector3[] cachedVertices)
@@ -188,9 +183,9 @@ public class MapVert : MonoBehaviour
         for (int uniqueIndex = 0; uniqueIndex < uniqueParticleIndices.Count; uniqueIndex++)
         {
             //assign a Vector3 temp to unique vertex positions
-            Vector3 particlePos = uniqueParticlePositions[uniqueIndex];
             //store the index temporarily of the unique vertex index
             int i = uniqueParticleIndices[uniqueIndex];
+            Vector3 vertPos = uniqueParticlePositions[i];
             //print(i);
             //nearestVertIndex.Add(i);
             //unique_Index.Add(uniqueIndex);
@@ -200,22 +195,22 @@ public class MapVert : MonoBehaviour
             //Set bone weights for each of the mesh vertices 
             if (bw.weight0 != 0.0f)
             {
-                Vector3 localPt = _cachedBindposes[bw.boneIndex0].MultiplyPoint3x4(particlePos);// cachedVertices[i]);
+                Vector3 localPt = _cachedBindposes[bw.boneIndex0].MultiplyPoint3x4(vertPos);// cachedVertices[i]);
                 nodeWeights[bw.boneIndex0].weights.Add(new VertexWeight(uniqueIndex, localPt, bw.weight0));
             }
             if (bw.weight1 != 0.0f)
             {
-                Vector3 localPt = _cachedBindposes[bw.boneIndex1].MultiplyPoint3x4(particlePos);//cachedVertices[i]);
+                Vector3 localPt = _cachedBindposes[bw.boneIndex1].MultiplyPoint3x4(vertPos);//cachedVertices[i]);
                 nodeWeights[bw.boneIndex1].weights.Add(new VertexWeight(uniqueIndex, localPt, bw.weight1));
             }
             if (bw.weight2 != 0.0f)
             {
-                Vector3 localPt = _cachedBindposes[bw.boneIndex2].MultiplyPoint3x4(particlePos);//cachedVertices[i]);
+                Vector3 localPt = _cachedBindposes[bw.boneIndex2].MultiplyPoint3x4(vertPos);//cachedVertices[i]);
                 nodeWeights[bw.boneIndex2].weights.Add(new VertexWeight(uniqueIndex, localPt, bw.weight2));
             }
             if (bw.weight3 != 0.0f)
             {
-                Vector3 localPt = _cachedBindposes[bw.boneIndex3].MultiplyPoint3x4(particlePos);//cachedVertices[i]);
+                Vector3 localPt = _cachedBindposes[bw.boneIndex3].MultiplyPoint3x4(vertPos);//cachedVertices[i]);
                 nodeWeights[bw.boneIndex3].weights.Add(new VertexWeight(uniqueIndex, localPt, bw.weight3));
             }
         }
@@ -265,7 +260,8 @@ public class MapVert : MonoBehaviour
             //Debug.Log(mass.name);
             //Store the index of the nearest mesh vertex for the current mass
             int nearestIndexforMass = GetNearestVertIndex(mass.transform.localPosition, cachedVertices);
-            
+            // the following is duplicated work! just use the nearestIndex directly to get the position from
+            // cachedVertices
             Vector3 nearestVertexPosforMass = GetNearestVertPos(mass.transform.localPosition, cachedVertices);
             Vector3 VertOffset = mass.transform.localPosition - nearestVertexPosforMass;
 
@@ -302,9 +298,6 @@ public class MapVert : MonoBehaviour
             _cachedVertices = Skin.sharedMesh.vertices;
             _cachedBindposes = Skin.sharedMesh.bindposes;
             _cachedBoneWeights = Skin.sharedMesh.boneWeights;
-
-
-
 
             List<Vector3> tempCache = new List<Vector3>();
             for (int i = 0; i < _cachedVertices.Length; i++)
@@ -376,26 +369,26 @@ public class MapVert : MonoBehaviour
            
         }
 
-        //MSSystem.positionBuffer.SetData(particlePositions);
+        //MSSystem.positionBuffer.SetData(shapeAnimVectors);
         MSSystem.externalForcesBuffer.SetData(shapeAnimVectors);
    
     }
 
 
-
-    public void OnDrawGizmos()
-    {
-        if (Skin == null)
-        {
-            return;
-        }
-        Mesh mesh = Skin.sharedMesh;
-        Vector3[] cachedVertices = mesh.vertices;
-        for (int i = 0; i < cachedVertices.Length; i++)
-        {
-            Gizmos.DrawSphere(cachedVertices[i], 0.05f);
-        }
-    }
+    //Uncomment the code below to draw gizmos for the surface vertices in editor view
+    //public void OnDrawGizmos()
+    //{
+    //    if (Skin == null)
+    //    {
+    //        return;
+    //    }
+    //    Mesh mesh = Skin.sharedMesh;
+    //    Vector3[] cachedVertices = mesh.vertices;
+    //    for (int i = 0; i < cachedVertices.Length; i++)
+    //    {
+    //        Gizmos.DrawSphere(cachedVertices[i], 0.05f);
+    //    }
+    //}
 
 
 }

@@ -102,7 +102,8 @@ const float3 getForceForNeighbour (const int idx, const int2 nIdx, const float s
     float3 dN     = d / (divisor == 0.0f ? 1.0f : divisor);//==0.0f
     float3 force  = stiffness * (d - springLength * dN) + dampingFactor * (velBuffer[nIdx.x].vel - velBuffer[idx.x].vel);
     // nIdx.y is a flag indicating whether that index exists within the grid bounds (1.0f or 0.0f).
-    return force *  nIdx.y;
+    return force * nIdx.y;
+	//nIdx.y should be set based on whether the voxel inside or outside hull
 }
 
 //[numthreads (thread_group_size_x, thread_group_size_y, 1)]
@@ -121,9 +122,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
      */
 
 	//number of points per side, per thread.
-    const int gX =3;
-    const int gY =3;
-    const int gZ =3;
+    const int gX =7;
+    const int gY =7;
+    const int gZ =7;
     //grid side resolution
     const int sX = gX * thread_group_size_x;
     const int sY = gY * thread_group_size_y;
@@ -182,9 +183,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
     /** Our grid is structured to have rigid, non-moving edges. 
      */
     //const float notEdge = (float) (northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y);
-    const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y);
+   /* const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y);
     const float notEdge2 = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
-	const float notEdge3 = notEdge + notEdge2;
+	const float notEdge3 = notEdge + notEdge2;*/
 	//const float notEdge = (float)(northNeighbour.y && eastNeighbour.y && westNeighbour.y && southNeighbour.y && northBendNeighbour.y && eastBendNeighbour.y && westBendNeighbour.y && southBendNeighbour.y && up_immediateNeighbour.y && down_immediateNeighbour.y);
     //const float notEdge = 10.0f;
     //const float notEdge = (float)(up_immediateNeighbour.y && down_immediateNeighbour.y);
@@ -256,9 +257,9 @@ void CSMainVel (uint3 id : SV_DispatchThreadID)
 void CSMainPos (uint3 id : SV_DispatchThreadID)
 {
     //number of points per side, per thread.
-    const int gX   = 3;
-    const int gY   = 3;
-    const int gZ   = 3;
+    const int gX   = 7;
+    const int gY   = 7;
+    const int gZ   = 7;
     //grid side resolution
     const int sX = gX * thread_group_size_x;
     const int sY = gY * thread_group_size_y;

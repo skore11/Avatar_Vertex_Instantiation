@@ -86,14 +86,14 @@ public class MassSpringSystem3D : MonoBehaviour
      *  will cause the system to return to a more 'stable' state quicker,
      *  and will reduce the propagation of forces throughout the grid.
      */
-    [Range(0.0001f, 5.0f)] public float Damping = 0.1f;
+    [Range(0.0001f, 1.0f)] public float Damping = 0.1f;
 
     /** The stiffness of the spings in the grid. Increasing this will
      *  cause mass points to 'rebound' with higher velocity, and will
      *  also decrease the time taken for the system to return to a
      *  'stable' state.
      */
-    [Range(0.0001f, 10.0f)] public float SpringStiffness = 0.05f;
+    [Range(0.0001f, 100.0f)] public float SpringStiffness = 0.05f;
 
     /** The lenght of the springs in the grid. This defines how far
      *  each mass unit is at a resting state.
@@ -141,9 +141,9 @@ public class MassSpringSystem3D : MonoBehaviour
      *  
      *  Change resolution of 3D grid using these values
      */
-    private const int gridUnitSideX = 3;
-    private const int gridUnitSideY = 3;
-    private const int gridUnitSideZ = 3; // leave it at 7 for now
+    private const int gridUnitSideX = 7;
+    private const int gridUnitSideY = 7;
+    private const int gridUnitSideZ = 7; // leave it at 7 for now
     private const int numThreadsPerGroupX = 10;
     private const int numThreadsPerGroupY = 10;
     private const int numThreadsPerGroupZ = 10; // leave it at 1 for now
@@ -187,78 +187,63 @@ public class MassSpringSystem3D : MonoBehaviour
 
     void Start()
     {
-        
+
         ReleaseBuffers();//when to release the buffers?
-        
+
         Initialise();
-        //for (int i = 0; i < Forces.Length; i++)
-        //{
-        //    print(Forces[i]);
-        //}
-        //Debug.Log(Forces.Length);//after initliase all the forces are set to crazy values other than gravity
-        //VertCount = Spawner.Primitives.Count;
-        ////print(VertCount);
-        ////CreateBuffers();
-        //Vector3[] positions = new Vector3[VertCount];
-        //Vector3[] velocities = new Vector3[VertCount];
-        //Vector3[] extForces = new Vector3[VertCount];
-        //Vector2[] neighbours = new Vector2[VertCount * numNeighbours];
-        //int neighboursArrayIndex = 0;
-        //int vertex = 0;
 
-        //// calculating 3D coordinates: innermost loop is x, then y, then z. this order that is expected by the compute shader!
+        SetNeighbourFlagsBasedOnPrimitives();
 
-        ////UpdateSpawnerPosCopy();
-        //for (int k = 0; k < GridResZ; k++)
-        //{
-        //    float z = (((k) - GridResZ / 2.0f) / GridResZ) * GetWorldGridSideLengthZ();
-        //    z = z + SpawnerZ;
-        //    for (int j = 0; j < GridResY; j++)
-        //    {
-        //        float y = (((j) - GridResY / 2.0f) / GridResY) * GetWorldGridSideLengthY();
-        //        y = y + SpawnerY;
-        //        for (int i = 0; i < GridResX; i++)
-        //        {
-        //            float x = (((i) - GridResX / 2.0f) / GridResX) * GetWorldGridSideLengthX();
-        //            x = x + SpawnerX;
-        //            //Debug.Log("x " + x + " y " + y + " z " + z);
-        //            foreach (var index in Spawner.Primitives)
-        //            {
-        //                int a = index.Key;
-        //                if (vertex == a)
-        //                {
-        //                    positions[vertex] = new Vector3(x, y, z);
-        //                    print("vertex:" + vertex + "position" + positions[vertex]);
-        //                    velocities[vertex] = new Vector3(0.0f, -9.8f, 0.0f);
-        //                    extForces[vertex] = new Vector3(0.0f, /*-9.8f*/0.0f, 0.0f);
-        //                    Vector2[] neighbourIndexFlagPairs = GetNeighbourIndexFlagPairs(vertex, i, j, k);
-        //                    for (int n = 0; n < 32; ++n)
-        //                    {
-        //                        neighbours[neighboursArrayIndex] = neighbourIndexFlagPairs[n];
-        //                        neighboursArrayIndex++;
-        //                    }
-        //                    vertex++;
-        //                }
+        SetPositionsandVelocitiesbasedOnPrimitives();
+    }
 
-        //            }
+    void SetNeighbourFlagsBasedOnPrimitives()
+    {
+        Vector2[] neighbours = new Vector2[VertCount * numNeighbours];
+        neighboursBuffer.GetData(neighbours);
 
-        //            //Debug.Log(extForces[vertex].x + " " + extForces[vertex].y + " " + extForces[vertex].z);
-        //            //At this point the extForces are still set to zero
+        // calculate new neighbour flags
+        ICollection<int> keys = Spawner.Primitives.Keys;
+        for (int neighboursArrayIndex = 0; neighboursArrayIndex < neighbours.Length; neighboursArrayIndex++)
+        {
+            Vector2 nidxypair = neighbours[neighboursArrayIndex];
+            if (nidxypair.y == 1)
+            {
+                // if x (the index of the neighbour) is not active, set to 0:
+                if (!keys.Contains((int)nidxypair.x))
+                {
+                    nidxypair.y = 0f;
+                    neighbours[neighboursArrayIndex] = nidxypair;
+                }
+            }
+        }
 
+        neighboursBuffer.SetData(neighbours);
+    }
 
-        //        }
-        //    }
-        //}
-        //positionBuffer.SetData(positions);// setting the position buffer that is sent to the compute shader with the positions of the vertices count
+    void SetPositionsandVelocitiesbasedOnPrimitives()
+    {
+        Vector3[] positions = new Vector3[VertCount];
+        Vector3[] velocities = new Vector3[VertCount];
+        Vector3[] extForces = new Vector3[VertCount];
+        velocityBuffer.GetData(velocities);
+        positionBuffer.GetData(positions);
+        externalForcesBuffer.GetData(extForces);
 
-        //velocityBuffer.SetData(velocities);
-        ////Debug.Log(velocities[1]);
-        ////debugBuffer.SetData(positions);
+        ICollection<int> keys = Spawner.Primitives.Keys;
+        for (int i = 0; i < positions.Length; i++)
+        {
+            if (!keys.Contains(i))
+            {
+                positions[i] = Vector3.zero;
+                velocities[i] = Vector3.zero;
+                extForces[i] = Vector3.zero;
+            }
+        }
 
-        //externalForcesBuffer.SetData(extForces);//first time the GPU is being sent forces values
-        ////Debug.Log(extForces[893]);
-        ////Debug.Log(extForces[vertex].x + " " + extForces[vertex].y + " " + extForces[vertex].z);
-        //neighboursBuffer.SetData(neighbours);
+        positionBuffer.SetData(positions);
+        velocityBuffer.SetData(velocities);
+        externalForcesBuffer.SetData(extForces);
     }
 
     /** Calculate our entire grid resolution and vertex count from the structure of the compute shader.
@@ -278,7 +263,7 @@ public class MassSpringSystem3D : MonoBehaviour
         //MassSpringComputeShader.SetBuffer(/*VelKernel*/PosKernel, SpringComputeShaderProperties3D.NeighboursBufferName, neighboursBuffer);
         MassSpringComputeShader.SetBuffer(VelKernel/*PosKernel*/, SpringComputeShaderProperties3D.NeighboursBufferName, neighboursBuffer);
         Spawner.SetMassUnitSize(SpringLength);
-        Spawner.SetMassUnitMass(Mass / VertCount);
+        Spawner.SetMassUnitMass(Mass /*/ VertCount*/);
         Spawner.SpawnPrimitives(Positions);
         foreach (var indexmass in Spawner.Primitives)// is there some way to avoid going through this arraylist every frame
         {
@@ -286,7 +271,7 @@ public class MassSpringSystem3D : MonoBehaviour
             //Debug.Log(mass.name);
             mass.GetComponent<Rigidbody>().useGravity = Gravity;
         }
-    
+
 
     }
 
@@ -322,51 +307,8 @@ public class MassSpringSystem3D : MonoBehaviour
 
     void FixedUpdate()
     {
-        
-        //Debug.Log("update");
-        //Vector3[] tempVels = new Vector3[VertCount];
-        //Vector3[] tempPoss = new Vector3[VertCount];
-        //foreach (var indexmass in Spawner.Primitives)// is there some way to avoid going through this arraylist every frame
-        //{
-        //    int index = indexmass.Key;
-        //    GameObject mass = indexmass.Value;
-        //    Vector3 tempVel = mass.GetComponent<Rigidbody>().velocity;
-        //    Vector3 tempPos = mass.GetComponent<Rigidbody>().transform.position;
-        //    if (Math.Abs(tempVel.x) < 0.5f && Math.Abs(tempVel.y) < 0.5f && Math.Abs(tempVel.z) < 0.5f)
-        //    {
-        //        tempVels[index] = new Vector3(0.0f, 0.0f, 0.0f);
-        //        tempPoss[index] = tempPos;
-        //    }
-        //    //if ((tempVel.x < 1.0f && tempVel.x > -1.0f) && (tempVel.y < 1.0f && tempVel.y > -1.0f) && (tempVel.z < 1.0f && tempVel.z > -1.0f))
-        //    //{
-        //    //    tempVels[index] = new Vector3(0.0f, 0.0f, 0.0f);
 
-        //    //}
-        //    else
-        //    {
-        //        tempVels[index] = tempVel;
 
-        //    }
-        //}
-        //velocityBuffer.SetData(tempVels);
-        //if (UITouchHandler.voxelTouched != -1)
-        //{
-        //    Vector3[] tempVels = new Vector3[VertCount];
-        //    foreach (var indexmass in Spawner.Primitives)
-        //    {
-        //        if (indexmass.Key == UITouchHandler.voxelTouched)
-        //        {
-        //            Vector3 tempVel = indexmass.Value.GetComponent<Rigidbody>().velocity;
-        //            Vector3 tempPos = indexmass.Value.transform.position;
-        //            Debug.Log("string for vel and pos");
-        //            Debug.Log(tempVel);
-        //            Debug.Log(tempPos);
-
-        //        }
-
-        //    }
-
-        //    }
         HandleGravityAndTouches();
         Dispatch();
         UpdatePrimitivePositions();
@@ -375,7 +317,7 @@ public class MassSpringSystem3D : MonoBehaviour
     /* This function can be used for graphical debugging puproses,
      * or if you simply want to render the mass points as points rather
      * than maintaining game objects.
-    */
+    
 
 /*    void OnPostRender ()
     {
@@ -419,7 +361,7 @@ public class MassSpringSystem3D : MonoBehaviour
 
     private void OnDisable()
     {
-        ReleaseBuffers();
+        //ReleaseBuffers();
     }
 
     //===========================================================================================
@@ -653,7 +595,9 @@ public class MassSpringSystem3D : MonoBehaviour
      */
     public Vector2[] GetNeighbourIndexFlagPairs(int index, int xLoopIndex, int yLoopIndex, int zLoopIndex)
     {
-        //TODO: needs to use the same numNeighbours (32) neighbours as the compute shader in the same order
+        
+        
+        //Use the same numNeighbours (32) neighbours as the compute shader in the same order
 
         //n, ne, e, se, s, sw, w, nw, nb, eb, sb, wb
         int[] neighburIndexes = GetNeighbours(index);
@@ -672,11 +616,14 @@ public class MassSpringSystem3D : MonoBehaviour
         {
             int id = neighbours[i];
             float flag = 1.0f;
-            if (id < 0 || id >= VertCount)
+            if (id < 0 || id >= VertCount )//check to see if the neighbor is within the bounds of convex hull, turn off (set to 0.0f)if not
             {
                 flag = 0f;
                 id = 0;
             }
+
+            
+
             else
             {
                 if ((xLoopIndex == 0) && (westIndices.Contains(i)))
@@ -842,10 +789,10 @@ public class MassSpringSystem3D : MonoBehaviour
                 Vector3 velocity = mass.GetComponent<Rigidbody>().velocity;
                 //Debug.Log(mass.GetComponent<Rigidbody>().velocity);
                 //Debug.Log(prevVel);
-                Mass = Mass / VertCount;
-                //gravityForces[index].x = /*Mathf.Round*/((Mass) * ((velocity.x - prevVel.x)));
-                //gravityForces[index].y = /*Mathf.Round*/((Mass) * ((velocity.y - prevVel.y)));
-                //gravityForces[index].z = (Mass) * ((velocity.z - prevVel.z));
+                //Mass = Mass / VertCount;
+                gravityForces[index].x = /*Mathf.Round*/((Mass) * ((velocity.x - prevVel.x)));
+                gravityForces[index].y = /*Mathf.Round*/((Mass) * ((velocity.y - prevVel.y)));
+                gravityForces[index].z = (Mass) * ((velocity.z - prevVel.z));
 
                 //gravityForces[index].x = /*Mathf.Round*/((0.0f) * ((velocity.x - prevVel.x)));
                 //gravityForces[index].y = /*Mathf.Round*/((0.0f) * ((velocity.z - prevVel.y)));
@@ -862,9 +809,9 @@ public class MassSpringSystem3D : MonoBehaviour
                 //Might have to just set the gravity manually for mass; here mass is 1
                 //if (foundGravity == true)
                 //{
-                gravityForces[index].x = Mathf.Clamp(gravityForces[index].x, 0.0f, 0.0f);
-                gravityForces[index].y = Mathf.Clamp(gravityForces[index].y, -9.8f, -9.8f);
-                gravityForces[index].z = Mathf.Clamp(gravityForces[index].z, 0.0f, 0.0f);
+                //gravityForces[index].x = Mathf.Clamp(gravityForces[index].x, 0.0f, 0.0f);
+                //gravityForces[index].y = Mathf.Clamp(gravityForces[index].y, Mass * -9.8f, 0.0f);
+                //gravityForces[index].z = Mathf.Clamp(gravityForces[index].z, 0.0f, 0.0f);
                 foundGravityForces = true;
                 //}//
                 //Debug.Log("Forces:" + gravityForces[index].x + ":" + gravityForces[index].y + ":" + gravityForces[index].z);
