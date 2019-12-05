@@ -79,7 +79,7 @@ public class MapVert : MonoBehaviour
     private List<Vector3> particlePositions; // world particle positions
 
     //Needed to update the mass particle positions after assigning bone weights from vertex mapping
-    public List<Vector3> particleRestPositions;
+    private List<Vector3> particleRestPositions;
 
     public WeightList[] particleNodeWeights; // one per node (vert). Weights of standard mesh
 

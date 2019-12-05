@@ -37,7 +37,7 @@ public class MassSpawner3D : MonoBehaviour
     private float     MassUnitMass;
     public Dictionary<int, GameObject> Primitives = new Dictionary<int, GameObject>();
     public Dictionary<int, GameObject> NonPrimitivesprimitive = new Dictionary<int, GameObject>();
-    public Vector3[] nextPositions = null;
+    private Vector3[] nextPositions = null;
     
 
     public CanvasTouchManager UITouchHandler;
@@ -63,6 +63,7 @@ public class MassSpawner3D : MonoBehaviour
         {
             return;
         }
+        
         foreach (var indexedPrimitive in Primitives)
         {
             //Vector3 newPosition = TranslateToUnityWorldSpace(nextPositions[indexedPrimitive.Key]);
@@ -71,21 +72,21 @@ public class MassSpawner3D : MonoBehaviour
 
             GameObject primi = indexedPrimitive.Value;
             Rigidbody rb = primi.GetComponent<Rigidbody>();
+            
+            if (rb)
+            {
 
-            //if (rb)
-            //{
+                Vector3 dist = newPosition - rb.position;
+                //print(dist);
+                rb.AddForce(dist * Time.deltaTime);
 
-            //    Vector3 dist = newPosition - rb.position;
-            //    //print(dist);
-            //    rb.AddForce(dist * Time.deltaTime);
+                //rb.position = newPosition;
 
-            //    //rb.position = newPosition;
-
-            //}
-            //else
-            //{
+            }
+            else
+            {
                 primi.transform.position = newPosition;
-            //}
+            }
         }
         this.nextPositions = null;
         // Debug.Log(MassPrefab.GetComponent<Rigidbody>().velocity);
@@ -114,7 +115,7 @@ public class MassSpawner3D : MonoBehaviour
             Destroy(obj.gameObject);
         }
         Primitives.Clear();
-
+        
         int index = 0;
         
         InsideTester insideTester = GetComponent<InsideTester>();
@@ -134,12 +135,14 @@ public class MassSpawner3D : MonoBehaviour
                 GameObject springMassObject = Instantiate<GameObject>(MassPrefab, worldPosition, Quaternion.identity, this.transform);
                 //print(index);
                 springMassObject.name = "MassObj" + index + " " + massPosition.ToString();
-                springMassObject.transform.localScale = Vector3.one * MassUnitSize;
+                // scale down a bit compared to springlenght (=massunitsize) to avoid collision:
+                springMassObject.transform.localScale = Vector3.one * 0.45f * MassUnitSize;
                 // set the mass of the object:
                 Rigidbody rb = springMassObject.GetComponent<Rigidbody>();
                 if (rb)
                 {
                     rb.mass = MassUnitMass;
+                    //Destroy(rb); // TESTING TESTING
                     Primitives[index] = springMassObject;
                     springMassObject.SetActive(true);
                 }
@@ -156,9 +159,7 @@ public class MassSpawner3D : MonoBehaviour
             
         }
 
-        
-       
-        //insideTester.meshCollider.gameObject.SetActive(false);
+        insideTester.meshCollider.gameObject.SetActive(false);
         //Debug.Log(this.gameObject.name + " spawned " + Primitives.Count + " primitives/voxels");
     }
 

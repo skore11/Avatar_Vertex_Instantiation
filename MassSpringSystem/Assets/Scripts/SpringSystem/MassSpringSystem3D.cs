@@ -141,9 +141,9 @@ public class MassSpringSystem3D : MonoBehaviour
      *  
      *  Change resolution of 3D grid using these values
      */
-    private const int gridUnitSideX = 7;
-    private const int gridUnitSideY = 7;
-    private const int gridUnitSideZ = 7; // leave it at 7 for now
+    private const int gridUnitSideX = 3;
+    private const int gridUnitSideY = 3;
+    private const int gridUnitSideZ = 3; // leave it at 7 for now
     private const int numThreadsPerGroupX = 10;
     private const int numThreadsPerGroupY = 10;
     private const int numThreadsPerGroupZ = 10; // leave it at 1 for now
@@ -271,8 +271,6 @@ public class MassSpringSystem3D : MonoBehaviour
             //Debug.Log(mass.name);
             mass.GetComponent<Rigidbody>().useGravity = Gravity;
         }
-
-
     }
 
     // remember Spawner position to be able to detect it being moved:
@@ -298,11 +296,13 @@ public class MassSpringSystem3D : MonoBehaviour
             Vector3 movement = Spawner.transform.position - new Vector3(SpawnerX, SpawnerY, SpawnerZ);
             TranslateMassSpringPositions(movement);
         }
+
         foreach (var indexmass in Spawner.Primitives)// is there some way to avoid going through this arraylist every frame
         {
             GameObject mass = indexmass.Value;
             mass.GetComponent<Rigidbody>().useGravity = Gravity;
         }
+
     }
 
     void FixedUpdate()
